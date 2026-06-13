@@ -1,0 +1,36 @@
+{
+  "skin-color": {
+    "label": "Tono de piel",
+    "type": "preset",
+    "palette": [
+      { "name": "Marfil",   "hex": "#FDDBB4" },
+      { "name": "Claro",    "hex": "#F5C5A3" },
+      { "name": "Medio",    "hex": "#D4956A" },
+      { "name": "Oscuro",   "hex": "#8D5524" },
+      { "name": "Profundo", "hex": "#4A2912" },
+      { "name": "Azul",     "hex": "#A8D8EA" },
+      { "name": "Verde",    "hex": "#A8EAC8" },
+      { "name": "Lila",     "hex": "#D4A8F0" }
+    ]
+  },
+  "hair-color": {
+    "label": "Color de cabello",
+    "type": "picker",
+    "constraints": { "saturation": { "min": 55 }, "lightness": { "min": 30, "max": 75 } },
+    "default": "#8B4513"
+  },
+  "shirt-color": {
+    "label": "Color de camiseta",
+    "type": "preset",
+    "palette": [
+      { "name": "Blanco",   "hex": "#F8F8F8" },
+      { "name": "Negro",    "hex": "#1A1A1A" },
+      { "name": "Rojo",     "hex": "#C0392B" },
+      { "name": "Azul",     "hex": "#2980B9" },
+      { "name": "Verde",    "hex": "#27AE60" },
+      { "name": "Amarillo", "hex": "#F1C40F" },
+      { "name": "Lila",     "hex": "#9B59B6" },
+      { "name": "Coral",    "hex": "#E8805A" }
+    ]
+  }
+}

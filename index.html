@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avatar OS — Builder</title>
+  <style>
+    :root {
+      --bg:        #0E0E12;
+      --surface:   #1A1A22;
+      --surface2:  #22222E;
+      --border:    #2E2E3E;
+      --accent:    #7C5CFC;
+      --accent2:   #C084FC;
+      --text:      #F0F0F8;
+      --text-muted:#888898;
+      --radius:    10px;
+      --unlock:    #F1C40F;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .collection-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── Layout principal ── */
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Preview ── */
+    #preview-col {
+      width: 520px;
+      min-width: 520px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      border-right: 1px solid var(--border);
+    }
+    #canvas-wrap {
+      position: relative;
+      width: 480px;
+      height: 480px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #111;
+      box-shadow: 0 8px 40px rgba(124,92,252,0.15);
+    }
+    #avatar-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #render-spinner {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(14,14,18,0.6);
+      font-size: 28px;
+    }
+    #render-spinner.active { display: flex; }
+
+    /* ── Controles bottom canvas ── */
+    .canvas-controls {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { opacity: .8; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .btn-primary:hover { opacity: .9; }
+
+    /* ── Panel de opciones ── */
+    #options-col {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #options-col::-webkit-scrollbar { width: 5px; }
+    #options-col::-webkit-scrollbar-track { background: transparent; }
+    #options-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Secciones ── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 12px 0 6px;
+    }
+
+    /* ── Layer row ── */
+    .layer-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .layer-row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .layer-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .locked-badge {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ── Asset grid ── */
+    .asset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .asset-btn {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 2px solid transparent;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color .15s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .asset-btn:hover { border-color: var(--border); }
+    .asset-btn.selected { border-color: var(--accent); }
+    .asset-btn.locked-asset { opacity: .45; cursor: not-allowed; }
+    .asset-btn canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+    .unlock-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 9px;
+      color: var(--unlock);
+      line-height: 1;
+    }
+
+    /* ── Color token row ── */
+    .token-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .token-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      width: 90px;
+      flex-shrink: 0;
+    }
+    .preset-grid {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform .1s, border-color .15s;
+    }
+    .color-swatch:hover { transform: scale(1.15); }
+    .color-swatch.selected { border-color: #fff; }
+
+    /* ── Hair picker custom ── */
+    #hair-picker-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+    }
+    #hair-wheel-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    #hair-canvas-wheel {
+      border-radius: 50%;
+      cursor: crosshair;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      touch-action: none;
+    }
+    #hair-preview-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    }
+    #hair-hex-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: monospace; }
+    #hair-lightness-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    #hair-lightness-label { font-size: 10px; color: var(--text-muted); width: 28px; }
+    #hair-lightness {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      background: linear-gradient(90deg, #1A1A1A, #8B4513, #FFF);
+    }
+    #hair-lightness::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--border);
+      cursor: pointer;
+    }
+
+    /* ── Compat toast ── */
+    .compat-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30,20,60,.95);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: 12px;
+      color: var(--text);
+      z-index: 50;
+      animation: toastIn .2s ease, toastOut .3s ease 2s forwards;
+      white-space: nowrap;
+    }
+    @keyframes toastIn  { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes toastOut { to   { opacity:0; transform:translateX(-50%) translateY(10px); } }
+
+    /* ── Keyword input ── */
+    .keyword-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    #keyword-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+    #keyword-input:focus { outline: 1px solid var(--accent); }
+    #keyword-submit {
+      padding: 8px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #keyword-feedback {
+      font-size: 11px;
+      padding: 4px 0;
+      min-height: 18px;
+    }
+    #keyword-feedback.success { color: var(--unlock); }
+    #keyword-feedback.error   { color: #F56565; }
+
+    /* ── Modal exportación ── */
+    #export-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.85);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #export-modal.open { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 28px 24px;
+      width: 420px;
+      max-width: 100%;
+      max-height: 96vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes modalIn {
+      from { opacity:0; transform: scale(.92) translateY(12px); }
+      to   { opacity:1; transform: scale(1)   translateY(0); }
+    }
+    #export-canvas-wrap {
+      width: 280px;
+      height: 280px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 40px rgba(124,92,252,.2);
+    }
+    #export-preview {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .modal-sub   { font-size: 11px; color: var(--text-muted); text-align: center; letter-spacing: .5px; }
+    .modal-actions { display: flex; gap: 10px; width: 100%; }
+    #modal-close {
+      position: absolute;
+      top: 14px; right: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    #modal-close:hover { background: var(--border); color: var(--text); }
+
+    /* ── Confetti ── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 99;
+      display: none;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      main { flex-direction: column; }
+      #preview-col {
+        width: 100%;
+        min-width: unset;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+      }
+      #canvas-wrap { width: 320px; height: 320px; }
+      #options-col { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>AVATAR OS</h1>
+  <span class="collection-badge" id="collection-label">Colección 6</span>
+</header>
+
+<main>
+  <!-- ── Preview ── -->
+  <div id="preview-col">
+    <div id="canvas-wrap">
+      <canvas id="avatar-canvas" width="1000" height="1000"></canvas>
+      <div id="render-spinner">⟳</div>
+    </div>
+    <div class="canvas-controls">
+      <button class="btn btn-ghost" id="btn-random">🎲 Aleatorio</button>
+      <button class="btn btn-primary" id="btn-export">✨ Exportar</button>
+    </div>
+  </div>
+
+  <!-- ── Panel opciones ── -->
+  <div id="options-col">
+    <div class="section-label">ESCENA</div>
+    <!-- Capas 0-1: background, emotion -->
+    <div id="slot-background" class="layer-row"></div>
+    <div id="slot-emotion"    class="layer-row"></div>
+
+    <div class="section-label">AVATAR</div>
+    <!-- Token: skin-color -->
+    <div class="token-row">
+      <span class="token-label">Tono de piel</span>
+      <div class="preset-grid" id="token-skin-color"></div>
+    </div>
+    <!-- Token: hair-color (picker) -->
+    <div class="token-row" style="flex-direction:column;align-items:flex-start">
+      <span class="token-label">Color cabello</span>
+      <div id="hair-picker-wrap">
+        <div id="hair-wheel-row">
+          <canvas id="hair-canvas-wheel" width="160" height="160"></canvas>
+          <div>
+            <div id="hair-preview-swatch"></div>
+            <div id="hair-hex-label">#8B4513</div>
+          </div>
+        </div>
+        <div id="hair-lightness-wrap">
+          <span id="hair-lightness-label">L</span>
+          <input type="range" id="hair-lightness" min="30" max="75" value="42" step="1">
+        </div>
+      </div>
+    </div>
+    <!-- Token: shirt-color -->
+    <div class="token-row">
+      <span class="token-label">Camiseta</span>
+      <div class="preset-grid" id="token-shirt-color"></div>
+    </div>
+    <!-- Capas: body, head, hair -->
+    <div id="slot-body"       class="layer-row"></div>
+    <div id="slot-head"       class="layer-row"></div>
+    <div id="slot-hair-back"  class="layer-row"></div>
+    <div id="slot-hair-front" class="layer-row"></div>
+    <div id="slot-shirt"      class="layer-row"></div>
+
+    <div class="section-label">EXTRAS</div>
+    <div id="slot-accessory-body"  class="layer-row"></div>
+    <div id="slot-facial-hair"     class="layer-row"></div>
+    <div id="slot-accessory-head"  class="layer-row"></div>
+    <div id="slot-accessory-face"  class="layer-row"></div>
+
+    <div class="section-label">MÁSCARA</div>
+    <div id="slot-mask" class="layer-row"></div>
+
+    <!-- Keyword -->
+    <div class="section-label">CLAVE ESPECIAL</div>
+    <div class="keyword-row" style="flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px">
+        <input id="keyword-input" placeholder="🔑 Tengo una clave..." maxlength="40">
+        <button id="keyword-submit">Activar</button>
+      </div>
+      <div id="keyword-feedback"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ── Modal exportación ── -->
+<div id="export-modal">
+  <div class="modal-box" style="position:relative">
+    <button id="modal-close">×</button>
+    <div id="export-canvas-wrap">
+      <canvas id="export-preview" width="1000" height="1000"></canvas>
+    </div>
+    <div class="modal-title" id="export-title">Tu Avatar</div>
+    <div class="modal-sub" id="export-sub">Colección 6 · Avatar OS</div>
+    <div id="export-message" style="font-size:12px;color:var(--text-muted);text-align:center;max-width:320px;line-height:1.5"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-download">⬇ Descargar PNG</button>
+      <button class="btn btn-primary" id="btn-share">↗ Compartir</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Scripts -->
+<script src="js/color-engine.js"></script>
+<script src="js/state.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/layer-manager.js"></script>
+<script src="js/keyword-engine.js"></script>
+<script src="js/asset-manager.js"></script>
+
+<script>
+// ── App Builder ────────────────────────────────────────────────────────────
+
+let _colorTokens  = null;
+let _layers       = [];
+let _renderTimer  = null;
+let _collConfig   = {};
+// hue/sat actuales de la rueda (para que el slider de luminosidad funcione)
+let _hairHue = 0, _hairSat = 75;
+
+const canvas  = document.getElementById('avatar-canvas');
+const spinner = document.getElementById('render-spinner');
+
+// ── Init ──
+async function init() {
+  AvatarState.load();
+
+  const [layersData, tokensData, colData] = await Promise.all([
+    fetch('data/layer-config.json').then(r => r.json()),
+    fetch('data/color-tokens.json').then(r => r.json()),
+    fetch('data/collections/col-06/config.json').then(r => r.json()).catch(() => ({})),
+  ]);
+
+  _colorTokens = tokensData;
+  _collConfig  = colData;
+  _layers = layersData.layers.sort((a, b) => a.order - b.order);
+
+  await KeywordEngine.load();
+
+  const state = AvatarState.get();
+  if (!Object.keys(state.selections).length) {
+    Object.entries(_randomSelections()).forEach(([k, v]) => AvatarState.setSelection(k, v));
+  }
+
+  buildUI();
+  buildColorUI();
+  buildHairWheel();
+  scheduleRender();
+
+  AvatarState.onChange((changed) => {
+    // Si cambió el cabello → revisar compatibilidad de accesorios
+    if (changed.type === 'selection' && changed.layerId === 'hair-back') {
+      _enforceCompatibility();
+    }
+    refreshSelectionUI();
+    scheduleRender();
+  });
+
+  document.getElementById('btn-random').onclick = doRandom;
+  document.getElementById('btn-export').onclick = openExportModal;
+  document.getElementById('modal-close').onclick = closeExportModal;
+  document.getElementById('export-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('export-modal')) closeExportModal();
+  });
+  document.getElementById('btn-download').onclick = downloadPNG;
+  document.getElementById('btn-share').onclick = sharePNG;
+  document.getElementById('keyword-submit').onclick = handleKeyword;
+  document.getElementById('keyword-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleKeyword();
+  });
+}
+
+// ── Random — respeta compatibilidad y también baraja colores ──
+function _randomSelections() {
+  const result = {};
+  // Primero elige el cabello para saber qué accesorios quedan disponibles
+  const hairLayer = _layers.find(l => l.id === 'hair-back');
+  let blocked = [];
+  if (hairLayer) {
+    const pick = hairLayer.assets[Math.floor(Math.random() * hairLayer.assets.length)];
+    result['hair-back'] = pick.id;
+    blocked = pick.blocksAccessories || [];
+  }
+
+  _layers.forEach(layer => {
+    if (layer.id === 'hair-back') return;
+    const available = layer.assets.filter(a => a.src !== undefined && !blocked.includes(a.id));
+    if (available.length) result[layer.id] = available[Math.floor(Math.random() * available.length)].id;
+  });
+  return result;
+}
+
+function doRandom() {
+  // Baraja colores también
+  if (_colorTokens) {
+    const skins  = _colorTokens['skin-color'].palette;
+    const shirts = _colorTokens['shirt-color'].palette;
+    AvatarState.setToken('skin-color',  skins [Math.floor(Math.random() * skins.length)].hex);
+    AvatarState.setToken('shirt-color', shirts[Math.floor(Math.random() * shirts.length)].hex);
+    // Cabello: hue aleatorio
+    const randHue = Math.random() * 360;
+    const randSat = 60 + Math.random() * 30;
+    const randLit = 32 + Math.random() * 38;
+    _hairHue = randHue; _hairSat = randSat;
+    const hex = hslToHex(randHue, randSat, randLit);
+    AvatarState.setToken('hair-color', hex);
+    _updateHairUI(hex, randLit);
+    Engine.clearCache();
+    // Sync swatches
+    _syncSwatchSelected('skin-color',  AvatarState.getToken('skin-color'));
+    _syncSwatchSelected('shirt-color', AvatarState.getToken('shirt-color'));
+  }
+  Object.entries(_randomSelections()).forEach(([k, v]) => AvatarState.setSelection(k, v));
+}
+
+// ── Compatibility enforcer ──
+function _enforceCompatibility() {
+  const state = AvatarState.get();
+  const hairLayer = _layers.find(l => l.id === 'hair-back');
+  if (!hairLayer) return;
+  const ha = hairLayer.assets.find(a => a.id === state.selections['hair-back']);
+  const blocked = ha?.blocksAccessories || [];
+  if (!blocked.length) return;
+
+  ['accessory-head'].forEach(layerId => {
+    const cur = state.selections[layerId];
+    if (cur && blocked.includes(cur)) {
+      // Auto-deselect → primera opción disponible (generalmente "ninguno")
+      const layer = _layers.find(l => l.id === layerId);
+      const fallback = layer?.assets.find(a => !blocked.includes(a.id));
+      if (fallback) {
+        AvatarState.setSelection(layerId, fallback.id);
+        showCompatToast(`⚠ ${layer.label}: "${layer.assets.find(a=>a.id===cur)?.label}" no disponible con este cabello`);
+      }
+    }
+  });
+}
+
+function showCompatToast(msg) {
+  const existing = document.querySelector('.compat-toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'compat-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ── Render ──
+function scheduleRender() {
+  if (_renderTimer) clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(doRender, 40);
+}
+
+async function doRender() {
+  spinner.classList.add('active');
+  const state = AvatarState.get();
+  try {
+    await Engine.render(canvas, _layers, state.selections, state.tokens);
+  } catch(e) {
+    console.error('Render error', e);
+  } finally {
+    spinner.classList.remove('active');
+  }
+}
+
+// ── Build UI ──
+const LAYER_SLOTS = [
+  'background','emotion','body','head','hair-back','hair-front','shirt',
+  'accessory-body','facial-hair','accessory-head','accessory-face','mask'
+];
+
+function buildUI() {
+  LAYER_SLOTS.forEach(id => {
+    const layer = _layers.find(l => l.id === id);
+    const slot  = document.getElementById('slot-' + id);
+    if (!layer || !slot) return;
+    renderLayerRow(layer, slot);
+  });
+}
+
+function renderLayerRow(layer, container) {
+  container.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'layer-row-header';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'layer-name';
+  nameEl.textContent = layer.label;
+  header.appendChild(nameEl);
+  if (layer.locked) {
+    const lk = document.createElement('span');
+    lk.className = 'locked-badge';
+    lk.textContent = '🔒 fijo por colección';
+    header.appendChild(lk);
+  }
+  container.appendChild(header);
+  const grid = document.createElement('div');
+  grid.className = 'asset-grid';
+  grid.id = 'grid-' + layer.id;
+  container.appendChild(grid);
+  refreshLayerGrid(layer.id);
+}
+
+function refreshLayerGrid(layerId) {
+  const grid  = document.getElementById('grid-' + layerId);
+  const layer = _layers.find(l => l.id === layerId);
+  if (!grid || !layer) return;
+
+  const state = AvatarState.get();
+  const hairLayer = _layers.find(l => l.id === 'hair-back');
+  let blocked = [];
+  if (hairLayer && state.selections['hair-back']) {
+    const ha = hairLayer.assets.find(a => a.id === state.selections['hair-back']);
+    if (ha?.blocksAccessories) blocked = ha.blocksAccessories;
+  }
+
+  const visible  = layer.assets.filter(a => !blocked.includes(a.id));
+  const selected = state.selections[layerId];
+
+  grid.innerHTML = '';
+  visible.forEach(asset => {
+    const btn = document.createElement('button');
+    btn.className = 'asset-btn' + (asset.id === selected ? ' selected' : '');
+    btn.title = asset.label;
+
+    const thumb = document.createElement('canvas');
+    thumb.width = thumb.height = 48;
+    btn.appendChild(thumb);
+    renderThumb(thumb, asset, layer, state.tokens);
+
+    if (AvatarState.isUnlocked(layerId, asset.id)) {
+      const badge = document.createElement('span');
+      badge.className = 'unlock-badge';
+      badge.textContent = '✦';
+      btn.appendChild(badge);
+    }
+
+    if (!asset.locked) {
+      btn.onclick = () => AvatarState.setSelection(layerId, asset.id);
+    } else {
+      btn.classList.add('locked-asset');
+    }
+
+    grid.appendChild(btn);
+  });
+}
+
+async function renderThumb(thumbCanvas, asset, layer, tokens) {
+  const ctx = thumbCanvas.getContext('2d');
+  if (!asset.src) {
+    ctx.fillStyle = '#1A1A22';
+    ctx.fillRect(0, 0, 48, 48);
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(16,16); ctx.lineTo(32,32);
+    ctx.moveTo(32,16); ctx.lineTo(16,32);
+    ctx.stroke();
+    return;
+  }
+  const bindings = {};
+  if (layer.colorBinding && layer.svgTarget && tokens[layer.colorBinding]) {
+    bindings[layer.svgTarget] = tokens[layer.colorBinding];
+  }
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = tmpCanvas.height = 1000;
+  try {
+    await Engine.render(tmpCanvas, [layer], { [layer.id]: asset.id }, tokens);
+    ctx.clearRect(0,0,48,48);
+    ctx.drawImage(tmpCanvas, 0, 0, 48, 48);
+  } catch(e) { /* silencioso */ }
+}
+
+// ── Color UI (skin + shirt) ──
+function buildColorUI() {
+  if (!_colorTokens) return;
+  const state = AvatarState.get();
+  _buildPresetGrid('token-skin-color',  'skin-color',  state.tokens['skin-color']);
+  _buildPresetGrid('token-shirt-color', 'shirt-color', state.tokens['shirt-color']);
+}
+
+function _buildPresetGrid(containerId, tokenId, currentHex) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  _colorTokens[tokenId].palette.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (currentHex === c.hex ? ' selected' : '');
+    sw.style.background = c.hex;
+    sw.title = c.name;
+    sw.dataset.hex = c.hex;
+    sw.onclick = () => {
+      AvatarState.setToken(tokenId, c.hex);
+      Engine.clearCache();
+      _syncSwatchSelected(tokenId, c.hex);
+    };
+    grid.appendChild(sw);
+  });
+}
+
+function _syncSwatchSelected(tokenId, hex) {
+  const gridId = tokenId === 'skin-color' ? 'token-skin-color' : 'token-shirt-color';
+  document.querySelectorAll(`#${gridId} .color-swatch`).forEach(s => {
+    s.classList.toggle('selected', s.dataset.hex === hex);
+  });
+}
+
+// ── Hair wheel — rueda cromática custom con cursor y slider ──
+function buildHairWheel() {
+  const wCanvas = document.getElementById('hair-canvas-wheel');
+  const ctx     = wCanvas.getContext('2d');
+  const SIZE    = 160;
+  const cx = SIZE/2, cy = SIZE/2, r = SIZE/2 - 4;
+  const state   = AvatarState.get();
+  const slider  = document.getElementById('hair-lightness');
+
+  // Pixel buffer de la rueda (sin cursor) — se regenera solo una vez por cambio de luminosidad
+  let _baseImageData = null;
+  let _currentLit = parseInt(slider.value);
+
+  function _drawWheel(lit) {
+    _currentLit = lit;
+    const imgData = ctx.createImageData(SIZE, SIZE);
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const dx = x - cx, dy = y - cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > r) { imgData.data[(y*SIZE+x)*4+3] = 0; continue; }
+        const hue = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+        const sat = 58 + (dist/r)*37;    // 58-95 %
+        const [rr,gg,bb] = hslToRgb(hue/360, sat/100, lit/100);
+        const i = (y*SIZE+x)*4;
+        imgData.data[i]=rr; imgData.data[i+1]=gg; imgData.data[i+2]=bb; imgData.data[i+3]=255;
+      }
+    }
+    _baseImageData = imgData;
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  function _drawCursor(px, py) {
+    // Restaura la rueda base antes de dibujar el cursor
+    if (_baseImageData) ctx.putImageData(_baseImageData, 0, 0);
+    ctx.beginPath();
+    ctx.arc(px, py, 7, 0, Math.PI*2);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 2.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI*2);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+  }
+
+  // Convierte hex → posición (px, py) en la rueda
+  function _hexToWheelPos(hex) {
+    const { h, s, l } = ColorEngine.hexToHSL(hex);
+    const angleDeg = h;
+    const dist     = Math.max(0, Math.min(1, (s - 58) / 37)) * r;
+    const rad = angleDeg * Math.PI / 180;
+    return { px: cx + Math.cos(rad)*dist, py: cy + Math.sin(rad)*dist, lit: l };
+  }
+
+  function applyColor(hex, px, py) {
+    document.getElementById('hair-preview-swatch').style.background = hex;
+    document.getElementById('hair-hex-label').textContent = hex;
+    AvatarState.setToken('hair-color', hex);
+    Engine.clearCache();
+    if (px !== undefined) _drawCursor(px, py);
+    // Sync gradient del slider con el color actual
+    _updateSliderGradient(hex);
+  }
+
+  function _updateSliderGradient(hex) {
+    const { h, s } = ColorEngine.hexToHSL(hex);
+    const dark  = `hsl(${h},${s}%,15%)`;
+    const mid   = `hsl(${h},${s}%,50%)`;
+    const light = `hsl(${h},${s}%,82%)`;
+    slider.style.background = `linear-gradient(90deg,${dark},${mid},${light})`;
+  }
+
+  function _updateHairColor(px, py) {
+    const pixel = ctx.getImageData(Math.round(px), Math.round(py), 1, 1).data;
+    if (pixel[3] < 200) return;
+    const hex = '#' + [pixel[0],pixel[1],pixel[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+    const { h, s } = ColorEngine.hexToHSL(hex);
+    _hairHue = h; _hairSat = s;
+    applyColor(hex, px, py);
+  }
+
+  // Init con valor guardado
+  const savedHex = state.tokens['hair-color'] || '#8B4513';
+  const { px: initPx, py: initPy, lit: initLit } = _hexToWheelPos(savedHex);
+  slider.value = Math.round(initLit);
+  _drawWheel(initLit);
+  applyColor(savedHex, initPx, initPy);
+
+  // Click + drag en rueda
+  let _dragging = false;
+  function _handlePointer(e) {
+    const rect = wCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const px = (clientX - rect.left) * (SIZE / rect.width);
+    const py = (clientY - rect.top)  * (SIZE / rect.height);
+    const dx = px - cx, dy = py - cy;
+    if (Math.sqrt(dx*dx+dy*dy) > r) return;
+    _updateHairColor(px, py);
+  }
+  wCanvas.addEventListener('mousedown',  e => { _dragging=true; _handlePointer(e); });
+  wCanvas.addEventListener('mousemove',  e => { if(_dragging) _handlePointer(e); });
+  wCanvas.addEventListener('mouseup',    ()=> _dragging=false);
+  wCanvas.addEventListener('mouseleave', ()=> _dragging=false);
+  wCanvas.addEventListener('touchstart', e => { e.preventDefault(); _handlePointer(e); }, { passive:false });
+  wCanvas.addEventListener('touchmove',  e => { e.preventDefault(); _handlePointer(e); }, { passive:false });
+
+  // Slider de luminosidad
+  slider.addEventListener('input', () => {
+    const lit = parseInt(slider.value);
+    _drawWheel(lit);
+    // Recalcular el hex con el nuevo L pero mismo H,S
+    const hex = hslToHex(_hairHue, _hairSat, lit);
+    // Recalcular posición del cursor en la nueva rueda
+    const { px, py } = _hexToWheelPos(hex);
+    applyColor(hex, px, py);
+  });
+}
+
+// ── Helpers color ──
+function hslToRgb(h, s, l) {
+  let r,g,b;
+  if (s===0) { r=g=b=l; }
+  else {
+    const q = l<.5 ? l*(1+s) : l+s-l*s, p=2*l-q;
+    const f = (p,q,t) => {
+      if(t<0)t+=1; if(t>1)t-=1;
+      if(t<1/6) return p+(q-p)*6*t;
+      if(t<1/2) return q;
+      if(t<2/3) return p+(q-p)*(2/3-t)*6;
+      return p;
+    };
+    r=f(p,q,h+1/3); g=f(p,q,h); b=f(p,q,h-1/3);
+  }
+  return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+}
+
+function hslToHex(h, s, l) {
+  const [r,g,b] = hslToRgb(h/360, s/100, l/100);
+  return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function _updateHairUI(hex, lit) {
+  document.getElementById('hair-preview-swatch').style.background = hex;
+  document.getElementById('hair-hex-label').textContent = hex;
+  document.getElementById('hair-lightness').value = Math.round(lit);
+}
+
+// ── Refresh UI tras cambio de estado ──
+function refreshSelectionUI() {
+  LAYER_SLOTS.forEach(id => refreshLayerGrid(id));
+}
+
+// ── Export modal ──
+async function openExportModal() {
+  const modal = document.getElementById('export-modal');
+  modal.classList.add('open');
+
+  const expCanvas = document.getElementById('export-preview');
+  const state = AvatarState.get();
+
+  // Renderizar en 1000×1000 real
+  await Engine.render(expCanvas, _layers, state.selections, state.tokens);
+
+  const date = new Date().toLocaleDateString('es', { day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('export-title').textContent = 'Tu Avatar';
+  document.getElementById('export-sub').textContent =
+    `${_collConfig.label || 'Colección 6'} · Avatar OS · ${date}`;
+  document.getElementById('export-message').textContent =
+    _collConfig.exportMessage || '¡Tu avatar ha sido creado! Descárgalo y compártelo.';
+
+  launchConfetti();
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('open');
+  document.getElementById('confetti-canvas').style.display = 'none';
+}
+
+function downloadPNG() {
+  // Descarga desde el canvas fuente (1000×1000)
+  const src = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = src;
+  a.download = `avatar-col06-${Date.now()}.png`;
+  a.click();
+}
+
+async function sharePNG() {
+  if (navigator.share && navigator.canShare) {
+    canvas.toBlob(async blob => {
+      try {
+        const file = new File([blob], 'avatar-col06.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: 'Mi Avatar — Colección 6', files: [file] });
+          return;
+        }
+      } catch(e) { /* fall through */ }
+      _copyFallback();
+    });
+  } else {
+    _copyFallback();
+  }
+}
+
+function _copyFallback() {
+  canvas.toBlob(blob => {
+    try {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => {
+        showCompatToast('✓ Avatar copiado al portapapeles');
+      }).catch(() => downloadPNG());
+    } catch { downloadPNG(); }
+  });
+}
+
+// ── Confetti ──
+function launchConfetti() {
+  const cc = document.getElementById('confetti-canvas');
+  cc.style.display = 'block';
+  cc.width  = window.innerWidth;
+  cc.height = window.innerHeight;
+  const ctx = cc.getContext('2d');
+  const pieces = Array.from({length: 80}, () => ({
+    x: Math.random() * cc.width,
+    y: -10 - Math.random() * 100,
+    r: 4 + Math.random() * 5,
+    d: 2 + Math.random() * 3,
+    color: ['#7C5CFC','#C084FC','#F1C40F','#4ADE80','#60A5FA','#F87171'][Math.floor(Math.random()*6)],
+    angle: Math.random() * 360,
+    spin:  (Math.random() - .5) * 8,
+    drift: (Math.random() - .5) * 1.5,
+  }));
+  let frame = 0;
+  function tick() {
+    ctx.clearRect(0,0,cc.width,cc.height);
+    pieces.forEach(p => {
+      p.y    += p.d;
+      p.x    += p.drift;
+      p.angle += p.spin;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle * Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - frame/90);
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*1.4);
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 110) requestAnimationFrame(tick);
+    else { ctx.clearRect(0,0,cc.width,cc.height); cc.style.display='none'; }
+  }
+  requestAnimationFrame(tick);
+}
+
+// ── Keywords ──
+async function handleKeyword() {
+  const input = document.getElementById('keyword-input');
+  const feedback = document.getElementById('keyword-feedback');
+  const val = input.value.trim();
+  if (!val) return;
+
+  const match = KeywordEngine.validate(val);
+  if (!match) {
+    feedback.textContent = '× Clave no reconocida';
+    feedback.className = 'error';
+    setTimeout(() => { feedback.textContent = ''; feedback.className = ''; }, 2500);
+    return;
+  }
+
+  if (AvatarState.hasKeyword(match.keyword)) {
+    feedback.textContent = '✦ Clave ya activada: ' + match.label;
+    feedback.className = 'success';
+    setTimeout(() => { feedback.textContent = ''; feedback.className = ''; }, 2500);
+    return;
+  }
+
+  AvatarState.addKeyword(match.keyword);
+  feedback.textContent = '✦ ¡Desbloqueado! ' + match.label;
+  feedback.className = 'success';
+  input.value = '';
+
+  // Inyectar assets desbloqueados
+  const assets = KeywordEngine.getUnlockedAssets(match);
+  assets.forEach(({ layerHint, src, fromKeyword }) => {
+    const layer = _layers.find(l => l.id.includes(layerHint) || l.label.toLowerCase().includes(layerHint));
+    if (layer) {
+      const newId = fromKeyword.toLowerCase() + '-' + layerHint;
+      if (!layer.assets.find(a => a.id === newId)) {
+        layer.assets.push({ id: newId, label: match.label, src, fromKeyword });
+      }
+      AvatarState.unlockAssets(layer.id, [newId]);
+    }
+  });
+
+  refreshSelectionUI();
+  setTimeout(() => { feedback.textContent = ''; feedback.className = ''; }, 3000);
+}
+
+// ── Arranque ──
+init().catch(console.error);
+</script>
+</body>
+</html>

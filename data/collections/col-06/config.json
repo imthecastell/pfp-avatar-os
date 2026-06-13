@@ -1,0 +1,9 @@
+{
+  "id": "col-06",
+  "label": "Colección 6",
+  "description": "Avatar OS — Edición 6",
+  "exportMessage": "Tu avatar ha sido creado. ¡Bienvenido a la Colección 6!",
+  "lockedBackgrounds": [],
+  "effectFront": "effect-glow",
+  "effectFinal": "effect-sig-col6"
+}

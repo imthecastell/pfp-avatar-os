@@ -1,0 +1,21 @@
+{
+  "keywords": [
+    {
+      "keyword": "PATO",
+      "label": "Set Pato",
+      "hint": "Qué hace el pato",
+      "active": true,
+      "scope": "cross-collection",
+      "unlocks": {
+        "outfit": {
+          "shirt":   "keywords/pato/shirt-patos.svg",
+          "hat":     "keywords/pato/bucket-hat-pato.svg",
+          "glasses": "keywords/pato/glasses-pato.svg"
+        },
+        "themedAssets": [
+          { "layer": "emotion", "asset": "keywords/pato/emotion-pato.svg" }
+        ]
+      }
+    }
+  ]
+}
