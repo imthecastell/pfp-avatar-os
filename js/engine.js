@@ -5,7 +5,10 @@
  */
 
 const Engine = (() => {
-  const CANVAS_SIZE = 1000;
+  // Usa AssetScaler.SIZES.CANVAS cuando está disponible (2048), sino 1000
+  const CANVAS_SIZE = (typeof AssetScaler !== 'undefined')
+    ? AssetScaler.SIZES.CANVAS
+    : 1000;
 
   // Cache de imágenes renderizadas { cacheKey: HTMLImageElement }
   const _cache = new Map();
@@ -40,6 +43,15 @@ const Engine = (() => {
         i.onerror = rej;
         i.src = src;
       });
+    }
+
+    // Escalar al tamaño de composición óptimo via AssetScaler
+    if (typeof AssetScaler !== 'undefined') {
+      try {
+        img = await AssetScaler._scaleTo(img, AssetScaler.SIZES.CANVAS);
+      } catch(e) {
+        console.warn('[Engine] AssetScaler falló, usando imagen original', e);
+      }
     }
 
     _cache.set(cacheKey, img);
