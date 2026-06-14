@@ -59,12 +59,63 @@ const ColorEngine = (() => {
   /**
    * Pipeline completo: fetch → process (Affinity compat) → recolor → Image.
    * bindings: { '.skin-fill': '#D4956A' }
+   * Si la capa también tiene originalColor, aplica reemplazo RGB como fallback.
    */
-  async function loadRecolored(url, bindings) {
+  async function loadRecolored(url, bindings, rgbReplacements) {
     const raw = await fetchSVG(url);
     const processed = (typeof SVGProcessor !== 'undefined') ? SVGProcessor.process(raw) : raw;
-    const colored = recolor(processed, bindings);
+    let colored = recolor(processed, bindings);
+    // Reemplazo RGB directo (Affinity inline fills)
+    if (rgbReplacements) {
+      for (const [from, toHex] of Object.entries(rgbReplacements)) {
+        colored = applyColorReplacement(colored, from, toHex);
+      }
+    }
     return svgToImage(colored);
+  }
+
+  /**
+   * Reemplaza un color RGB/hex en el SVG string directamente.
+   * Útil para SVGs de Affinity que exportan fill:rgb() inline.
+   */
+  function applyColorReplacement(svgString, fromColor, toHex) {
+    const toRgb = hexToRgbStr(toHex);
+    let result = svgString;
+    result = result.replaceAll(fromColor, toRgb);
+    const noSpace = fromColor.replace(/\s/g, '');
+    if (noSpace !== fromColor) result = result.replaceAll(noSpace, toRgb);
+    const fromHex = rgbStrToHex(fromColor);
+    if (fromHex) {
+      result = result.replaceAll(fromHex.toLowerCase(), toRgb);
+      result = result.replaceAll(fromHex.toUpperCase(), toRgb);
+    }
+    return result;
+  }
+
+  /**
+   * Aplica tokens de color a un SVG de Affinity usando el originalColor de la capa.
+   * layerDef: { colorBinding, originalColor }  (de layer-config.json)
+   * tokens: { 'skin-color': '#D4956A', ... }
+   */
+  function applyTokensToSVG(svgString, layerDef, tokens) {
+    if (!layerDef.originalColor || !layerDef.colorBinding) return svgString;
+    const newHex = tokens[layerDef.colorBinding];
+    if (!newHex) return svgString;
+    return applyColorReplacement(svgString, layerDef.originalColor, newHex);
+  }
+
+  function hexToRgbStr(hex) {
+    if (!hex || hex[0] !== '#') return hex;
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function rgbStrToHex(rgbStr) {
+    const m = rgbStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (!m) return null;
+    return '#' + [m[1],m[2],m[3]].map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
   }
 
   /**
@@ -116,7 +167,7 @@ const ColorEngine = (() => {
     ];
   }
 
-  return { recolor, svgToImage, fetchSVG, loadRecolored, hexToHSL, validateHairColor, generateHairPalette };
+  return { recolor, svgToImage, fetchSVG, loadRecolored, applyColorReplacement, applyTokensToSVG, hexToRgbStr, rgbStrToHex, hexToHSL, validateHairColor, generateHairPalette };
 })();
 
 if (typeof module !== 'undefined') module.exports = ColorEngine;

@@ -603,6 +603,7 @@
 <!-- Scripts -->
 <script src="js/asset-scaler.js"></script>
 <script src="js/svg-processor.js"></script>
+<script src="js/variant-engine.js"></script>
 <script src="js/color-engine.js"></script>
 <script src="js/state.js"></script>
 <script src="js/engine.js"></script>
@@ -631,11 +632,13 @@ function _getTokenConfig(id) {
 async function init() {
   State.load();
 
-  const [layersData, tokensData, colData] = await Promise.all([
+  const [layersData, tokensData, colData, variantData] = await Promise.all([
     fetch('data/layer-config.json').then(r => r.json()),
     fetch('data/color-tokens.json').then(r => r.json()),
     fetch('data/collections/col-06/config.json').then(r => r.json()).catch(() => ({})),
+    fetch('data/variant-config.json').then(r => r.json()).catch(() => ({ variants: [] })),
   ]);
+  if (typeof VariantEngine !== 'undefined') VariantEngine.loadConfig(variantData);
 
   _colorTokens = tokensData;
   _collConfig  = colData;

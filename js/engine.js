@@ -19,10 +19,10 @@ const Engine = (() => {
    * Devuelve una Image dibujable para un asset dado.
    * Soporta: placeholder:<layerId>, URLs relativas (SVG/PNG).
    */
-  async function _loadAsset(src, bindings) {
+  async function _loadAsset(src, bindings, layer, tokens, variantId) {
     if (!src) return null;
 
-    const cacheKey = src + JSON.stringify(bindings || {});
+    const cacheKey = src + JSON.stringify(bindings || {}) + (variantId || '');
     if (_cache.has(cacheKey)) return _cache.get(cacheKey);
 
     let img;
@@ -34,7 +34,26 @@ const Engine = (() => {
       img = await ColorEngine.svgToImage(colored);
 
     } else if (src.endsWith('.svg')) {
-      img = await ColorEngine.loadRecolored(src, bindings || {});
+      // Construir reemplazos RGB si la capa tiene originalColor (Affinity)
+      const rgbReplacements = {};
+      if (layer?.originalColor && layer?.colorBinding && tokens?.[layer.colorBinding]) {
+        rgbReplacements[layer.originalColor] = tokens[layer.colorBinding];
+      }
+      // Cargar SVG como string para poder aplicar variante + RGB replace
+      const raw = await ColorEngine.fetchSVG(src);
+      let svgStr = (typeof SVGProcessor !== 'undefined') ? SVGProcessor.process(raw) : raw;
+      // Aplicar variante (colorOverrides del admin)
+      if (variantId && typeof VariantEngine !== 'undefined') {
+        svgStr = VariantEngine.applyVariant(svgStr, variantId);
+      }
+      // Aplicar tokens: primero clases CSS (.skin-fill), luego RGB directo
+      svgStr = ColorEngine.recolor(svgStr, bindings || {});
+      if (Object.keys(rgbReplacements).length) {
+        for (const [from, to] of Object.entries(rgbReplacements)) {
+          svgStr = ColorEngine.applyColorReplacement(svgStr, from, to);
+        }
+      }
+      img = await ColorEngine.svgToImage(svgStr);
 
     } else {
       img = await new Promise((res, rej) => {
@@ -64,9 +83,9 @@ const Engine = (() => {
    * Renderiza el avatar completo en el canvas dado.
    *
    * @param {HTMLCanvasElement} canvas
-   * @param {Array}  layers     — de layer-config.json, ordenados por .order
-   * @param {Object} selectedAssets — { layerId: filePath|null }
-   * @param {Object} tokens     — { tokenId: hexColor }
+   * @param {Array}  layers         — de layer-config.json, ordenados por .order
+   * @param {Object} selectedAssets — { layerId: filePath|variantId|null }
+   * @param {Object} tokens         — { tokenId: hexColor }
    */
   async function render(canvas, layers, selectedAssets, tokens) {
     const ctx = canvas.getContext('2d');
@@ -86,8 +105,15 @@ const Engine = (() => {
         bindings[layer.svgTarget] = tokens[layer.colorBinding];
       }
 
+      // Para variantes: el src es el del padre, pero el id guardado puede ser un variantId
+      const variantId = (typeof VariantEngine !== 'undefined' && VariantEngine.isVariant(src))
+        ? src : null;
+      const resolvedSrc = variantId
+        ? VariantEngine.getVariant(variantId).parentSrc
+        : src;
+
       try {
-        const img = await _loadAsset(src, bindings);
+        const img = await _loadAsset(resolvedSrc, bindings, layer, tokens, variantId);
         if (!img) continue;
 
         ctx.save();

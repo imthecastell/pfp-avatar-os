@@ -42,6 +42,7 @@
       "locked": false,
       "colorBinding": "skin-color",
       "svgTarget": ".skin-fill",
+      "originalColor": "rgb(249,199,182)",
       "assets": [
         { "id": "body-base-default", "label": "Cuerpo Base", "src": "placeholder:body-base", "tags": [] }
       ]
@@ -71,6 +72,7 @@
       "locked": false,
       "colorBinding": "hair-color",
       "svgTarget": ".hair-fill",
+      "originalColor": "rgb(0,177,129)",
       "pairedWith": "hair-front",
       "assets": [
         { "id": "hair-none",       "label": "Sin cabello", "src": null,                    "tags": [] },
@@ -88,6 +90,7 @@
       "locked": false,
       "colorBinding": "skin-color",
       "svgTarget": ".skin-fill",
+      "originalColor": "rgb(249,199,182)",
       "assets": [
         { "id": "head-default", "label": "Cara Base",    "src": "placeholder:head", "tags": [] },
         { "id": "head-round",   "label": "Cara Redonda", "src": "placeholder:head", "tags": [] }
@@ -120,6 +123,7 @@
       "locked": false,
       "colorBinding": "hair-color",
       "svgTarget": ".hair-fill",
+      "originalColor": "rgb(0,177,129)",
       "pairedWith": "hair-back",
       "assets": [
         { "id": "hair-none-front",  "label": "Sin cabello", "src": null,                     "tags": [] },
@@ -137,6 +141,7 @@
       "locked": false,
       "colorBinding": "hair-color",
       "svgTarget": ".hair-fill",
+      "originalColor": "rgb(0,177,129)",
       "optional": true,
       "assets": [
         { "id": "fhair-none",  "label": "Ninguno", "src": null,                      "tags": [] },
