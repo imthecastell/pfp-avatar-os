@@ -1,12 +1,16 @@
 /**
  * ColorEngine — recolorea SVGs inline usando tokens de color.
  * Aplica color a elementos con clase .skin-fill, .hair-fill, .shirt-fill, etc.
+ * Las clases FIXED (outline, shadow, blush, etc.) nunca son modificadas.
  */
 
 const ColorEngine = (() => {
 
+  const FIXED_CLASSES = ['outline', 'shadow', 'blush', 'detail', 'whites', 'texture', 'crack'];
+
   /**
    * Dada una cadena SVG y un mapa { svgClass: hexColor }, devuelve el SVG recoloreado.
+   * Nunca toca elementos con clase FIXED (outline, shadow, etc.).
    */
   function recolor(svgString, bindings) {
     if (!svgString || !bindings || Object.keys(bindings).length === 0) return svgString;
@@ -19,6 +23,8 @@ const ColorEngine = (() => {
     for (const [className, color] of Object.entries(bindings)) {
       const cls = className.startsWith('.') ? className.slice(1) : className;
       svgEl.querySelectorAll('.' + cls).forEach(el => {
+        // Nunca modificar elementos con clase FIXED
+        if (FIXED_CLASSES.some(fc => el.classList.contains(fc))) return;
         el.style.fill = color;
         el.setAttribute('fill', color);
       });
@@ -51,12 +57,13 @@ const ColorEngine = (() => {
   }
 
   /**
-   * Pipeline completo: fetch → recolor → Image.
+   * Pipeline completo: fetch → process (Affinity compat) → recolor → Image.
    * bindings: { '.skin-fill': '#D4956A' }
    */
   async function loadRecolored(url, bindings) {
     const raw = await fetchSVG(url);
-    const colored = recolor(raw, bindings);
+    const processed = (typeof SVGProcessor !== 'undefined') ? SVGProcessor.process(raw) : raw;
+    const colored = recolor(processed, bindings);
     return svgToImage(colored);
   }
 
@@ -93,7 +100,23 @@ const ColorEngine = (() => {
     return true;
   }
 
-  return { recolor, svgToImage, fetchSVG, loadRecolored, hexToHSL, validateHairColor };
+  /**
+   * Genera paleta de presets para el selector de cabello (8 tonos curativos).
+   */
+  function generateHairPalette() {
+    return [
+      { name: 'Negro',      hex: '#1A1A1A' },
+      { name: 'Castaño',    hex: '#5C3317' },
+      { name: 'Café',       hex: '#8B4513' },
+      { name: 'Miel',       hex: '#C68642' },
+      { name: 'Rubio',      hex: '#D4A017' },
+      { name: 'Platino',    hex: '#E8DCCA' },
+      { name: 'Rojizo',     hex: '#8B2500' },
+      { name: 'Pelirrojo',  hex: '#C0392B' },
+    ];
+  }
+
+  return { recolor, svgToImage, fetchSVG, loadRecolored, hexToHSL, validateHairColor, generateHairPalette };
 })();
 
 if (typeof module !== 'undefined') module.exports = ColorEngine;

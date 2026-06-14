@@ -1,9 +1,109 @@
 {
   "id": "col-06",
-  "label": "Colección 6",
-  "description": "Avatar OS — Edición 6",
-  "exportMessage": "Tu avatar ha sido creado. ¡Bienvenido a la Colección 6!",
-  "lockedBackgrounds": [],
-  "effectFront": "effect-glow",
-  "effectFinal": "effect-sig-col6"
+  "name": "Surrealista Dalí",
+  "description": "Colección surrealista inspirada en Dalí. Fondos oníricos, emociones flotantes y accesorios de época.",
+
+  "backgrounds": [
+    { "id": "bg-dali-desert", "label": "Desierto Dalí",  "file": "placeholder:background" },
+    { "id": "bg-dali-sky",    "label": "Cielo Surreal",  "file": "placeholder:background" },
+    { "id": "bg-dali-ocean",  "label": "Océano Onírico", "file": "placeholder:background" }
+  ],
+
+  "emotions": [
+    { "id": "emotion-none",  "label": "Ninguna",  "file": null },
+    { "id": "emotion-clock", "label": "Reloj",    "file": "placeholder:emotion" },
+    { "id": "emotion-eye",   "label": "Ojo",      "file": "placeholder:emotion" },
+    { "id": "emotion-star",  "label": "Estrella", "file": "placeholder:emotion" }
+  ],
+
+  "hairStyles": [
+    {
+      "id": "hair-none",
+      "label": "Sin cabello",
+      "back": null,
+      "front": null,
+      "blockedAccessories": []
+    },
+    {
+      "id": "hair-short",
+      "label": "Corto",
+      "back":  "placeholder:hair-back",
+      "front": "placeholder:hair-front",
+      "blockedAccessories": []
+    },
+    {
+      "id": "hair-long",
+      "label": "Largo",
+      "back":  "placeholder:hair-back",
+      "front": "placeholder:hair-front",
+      "blockedAccessories": ["hat-snapback", "hat-bucket"]
+    },
+    {
+      "id": "hair-afro",
+      "label": "Afro",
+      "back":  "placeholder:hair-back",
+      "front": "placeholder:hair-front",
+      "blockedAccessories": ["hat-snapback"]
+    },
+    {
+      "id": "hair-dali",
+      "label": "Estilo Dalí",
+      "back":  "placeholder:hair-back",
+      "front": "placeholder:hair-front",
+      "blockedAccessories": []
+    }
+  ],
+
+  "headAccessories": [
+    {
+      "id": "acc-none",
+      "label": "Ninguno",
+      "back": null,
+      "front": null,
+      "blockedHairStyles": []
+    },
+    {
+      "id": "hat-snapback",
+      "label": "Snapback",
+      "back":  "placeholder:accessory-back",
+      "front": "placeholder:accessory-front",
+      "blockedHairStyles": ["hair-afro", "hair-long"]
+    },
+    {
+      "id": "hat-bucket",
+      "label": "Bucket Hat",
+      "back":  "placeholder:accessory-back",
+      "front": "placeholder:accessory-front",
+      "blockedHairStyles": ["hair-long"]
+    },
+    {
+      "id": "hat-dali",
+      "label": "Sombrero Dalí",
+      "back":  "placeholder:accessory-back",
+      "front": "placeholder:accessory-front",
+      "blockedHairStyles": []
+    }
+  ],
+
+  "masks": [
+    { "id": "mask-none", "label": "Sin máscara",  "file": null },
+    { "id": "mask-dali", "label": "Máscara Dalí", "file": "placeholder:mask" }
+  ],
+
+  "lockedLayers": {
+    "effect-front": {
+      "file":      null,
+      "blendMode": "source-over"
+    },
+    "effect-final": {
+      "file":      null,
+      "blendMode": "overlay"
+    },
+    "frame": {
+      "file":      "placeholder:frame",
+      "blendMode": "source-over"
+    }
+  },
+
+  "exportMessage": "Tu avatar Surrealista Dalí está listo. ¡Compártelo! #AvatarOS #Dali"
 }

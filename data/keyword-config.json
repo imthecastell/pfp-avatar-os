@@ -1,6 +1,40 @@
 {
   "keywords": [
     {
+      "id": "DALI26",
+      "keyword": "DALI26",
+      "label": "Colección Dalí",
+      "hint": "Desbloquea assets exclusivos de la colección Surrealista Dalí",
+      "active": true,
+      "scope": "col-06",
+      "unlocks": {
+        "outfit": {
+          "shirt": { "file": "keywords/dali26/shirt-dali.svg", "layer": "shirt" }
+        },
+        "themedAssets": [
+          { "layer": "emotion",  "file": "keywords/dali26/emotion-clock.svg" },
+          { "layer": "mask",     "file": "keywords/dali26/mask-dali.svg" }
+        ]
+      }
+    },
+    {
+      "id": "MODERADOR",
+      "keyword": "MODERADOR",
+      "label": "Acceso Moderador",
+      "hint": "Desbloquea el set de moderador",
+      "active": true,
+      "scope": "cross-collection",
+      "unlocks": {
+        "outfit": {
+          "shirt": { "file": "keywords/moderador/shirt-mod.svg", "layer": "shirt" }
+        },
+        "themedAssets": [
+          { "layer": "accessory-face", "file": "keywords/moderador/glasses-mod.svg" }
+        ]
+      }
+    },
+    {
+      "id": "PATO",
       "keyword": "PATO",
       "label": "Set Pato",
       "hint": "Qué hace el pato",
@@ -8,12 +42,12 @@
       "scope": "cross-collection",
       "unlocks": {
         "outfit": {
-          "shirt":   "keywords/pato/shirt-patos.svg",
-          "hat":     "keywords/pato/bucket-hat-pato.svg",
-          "glasses": "keywords/pato/glasses-pato.svg"
+          "shirt": { "file": "keywords/pato/shirt-patos.svg",   "layer": "shirt" },
+          "hat":   { "file": "keywords/pato/bucket-hat-pato.svg", "hatFront": "keywords/pato/bucket-hat-pato-front.svg", "layer": "accessory-back" }
         },
         "themedAssets": [
-          { "layer": "emotion", "asset": "keywords/pato/emotion-pato.svg" }
+          { "layer": "emotion",       "file": "keywords/pato/emotion-pato.svg" },
+          { "layer": "accessory-face","file": "keywords/pato/glasses-pato.svg" }
         ]
       }
     }

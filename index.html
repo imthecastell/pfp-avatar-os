@@ -257,6 +257,11 @@
       gap: 10px;
       width: 100%;
     }
+    #hair-presets-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
     #hair-wheel-row {
       display: flex;
       align-items: center;
@@ -301,6 +306,43 @@
       background: #fff;
       border: 2px solid var(--border);
       cursor: pointer;
+    }
+
+    /* ── Pair selector (hair style / head accessory) ── */
+    .pair-btn {
+      position: relative;
+      min-width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 2px solid transparent;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color .15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 4px 6px;
+      gap: 2px;
+    }
+    .pair-btn:hover { border-color: var(--border); }
+    .pair-btn.selected { border-color: var(--accent); }
+    .pair-btn canvas {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+    }
+    .pair-btn .pair-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 52px;
     }
 
     /* ── Compat toast ── */
@@ -476,7 +518,6 @@
   <!-- ── Panel opciones ── -->
   <div id="options-col">
     <div class="section-label">ESCENA</div>
-    <!-- Capas 0-1: background, emotion -->
     <div id="slot-background" class="layer-row"></div>
     <div id="slot-emotion"    class="layer-row"></div>
 
@@ -486,10 +527,11 @@
       <span class="token-label">Tono de piel</span>
       <div class="preset-grid" id="token-skin-color"></div>
     </div>
-    <!-- Token: hair-color (picker) -->
+    <!-- Token: hair-color (picker + presets) -->
     <div class="token-row" style="flex-direction:column;align-items:flex-start">
       <span class="token-label">Color cabello</span>
       <div id="hair-picker-wrap">
+        <div id="hair-presets-row"></div>
         <div id="hair-wheel-row">
           <canvas id="hair-canvas-wheel" width="160" height="160"></canvas>
           <div>
@@ -499,7 +541,7 @@
         </div>
         <div id="hair-lightness-wrap">
           <span id="hair-lightness-label">L</span>
-          <input type="range" id="hair-lightness" min="30" max="75" value="42" step="1">
+          <input type="range" id="hair-lightness" min="10" max="90" value="42" step="1">
         </div>
       </div>
     </div>
@@ -508,21 +550,24 @@
       <span class="token-label">Camiseta</span>
       <div class="preset-grid" id="token-shirt-color"></div>
     </div>
-    <!-- Capas: body, head, hair -->
-    <div id="slot-body"       class="layer-row"></div>
+    <!-- Capas individuales -->
+    <div id="slot-body-base"  class="layer-row"></div>
     <div id="slot-head"       class="layer-row"></div>
-    <div id="slot-hair-back"  class="layer-row"></div>
-    <div id="slot-hair-front" class="layer-row"></div>
+    <!-- Cabello: selector de par (collection-driven) -->
+    <div id="slot-hair-style" class="layer-row"></div>
     <div id="slot-shirt"      class="layer-row"></div>
 
     <div class="section-label">EXTRAS</div>
-    <div id="slot-accessory-body"  class="layer-row"></div>
-    <div id="slot-facial-hair"     class="layer-row"></div>
-    <div id="slot-accessory-head"  class="layer-row"></div>
-    <div id="slot-accessory-face"  class="layer-row"></div>
+    <div id="slot-facial-hair"    class="layer-row"></div>
+    <!-- Accesorios de cabeza: selector de par (collection-driven) -->
+    <div id="slot-head-accessory" class="layer-row"></div>
+    <div id="slot-accessory-face" class="layer-row"></div>
 
     <div class="section-label">MÁSCARA</div>
     <div id="slot-mask" class="layer-row"></div>
+
+    <div class="section-label">LOGOS</div>
+    <div id="slot-frame" class="layer-row"></div>
 
     <!-- Keyword -->
     <div class="section-label">CLAVE ESPECIAL</div>
@@ -556,6 +601,7 @@
 <canvas id="confetti-canvas"></canvas>
 
 <!-- Scripts -->
+<script src="js/svg-processor.js"></script>
 <script src="js/color-engine.js"></script>
 <script src="js/state.js"></script>
 <script src="js/engine.js"></script>
@@ -564,21 +610,25 @@
 <script src="js/asset-manager.js"></script>
 
 <script>
-// ── App Builder ────────────────────────────────────────────────────────────
+// ── App Builder v2 ─────────────────────────────────────────────────────────
 
-let _colorTokens  = null;
+let _colorTokens  = null;   // { tokens: [...] }
 let _layers       = [];
 let _renderTimer  = null;
 let _collConfig   = {};
-// hue/sat actuales de la rueda (para que el slider de luminosidad funcione)
 let _hairHue = 0, _hairSat = 75;
 
 const canvas  = document.getElementById('avatar-canvas');
 const spinner = document.getElementById('render-spinner');
 
+// ── Color token helper ──
+function _getTokenConfig(id) {
+  return _colorTokens?.tokens?.find(t => t.id === id) ?? null;
+}
+
 // ── Init ──
 async function init() {
-  AvatarState.load();
+  State.load();
 
   const [layersData, tokensData, colData] = await Promise.all([
     fetch('data/layer-config.json').then(r => r.json()),
@@ -590,11 +640,16 @@ async function init() {
   _collConfig  = colData;
   _layers = layersData.layers.sort((a, b) => a.order - b.order);
 
+  if (_collConfig.name) {
+    document.getElementById('collection-label').textContent = _collConfig.name;
+  }
+
   await KeywordEngine.load();
 
-  const state = AvatarState.get();
-  if (!Object.keys(state.selections).length) {
-    Object.entries(_randomSelections()).forEach(([k, v]) => AvatarState.setSelection(k, v));
+  // Selecciones iniciales si no hay estado guardado
+  const state = State.get();
+  if (!Object.keys(state.selectedAssets).length) {
+    _applyRandomSelections();
   }
 
   buildUI();
@@ -602,11 +657,7 @@ async function init() {
   buildHairWheel();
   scheduleRender();
 
-  AvatarState.onChange((changed) => {
-    // Si cambió el cabello → revisar compatibilidad de accesorios
-    if (changed.type === 'selection' && changed.layerId === 'hair-back') {
-      _enforceCompatibility();
-    }
+  State.onChange(() => {
     refreshSelectionUI();
     scheduleRender();
   });
@@ -625,80 +676,47 @@ async function init() {
   });
 }
 
-// ── Random — respeta compatibilidad y también baraja colores ──
-function _randomSelections() {
-  const result = {};
-  // Primero elige el cabello para saber qué accesorios quedan disponibles
-  const hairLayer = _layers.find(l => l.id === 'hair-back');
-  let blocked = [];
-  if (hairLayer) {
-    const pick = hairLayer.assets[Math.floor(Math.random() * hairLayer.assets.length)];
-    result['hair-back'] = pick.id;
-    blocked = pick.blocksAccessories || [];
+// ── Randomización ──
+function _applyRandomSelections() {
+  if (_collConfig.hairStyles?.length) {
+    const hs = _collConfig.hairStyles[Math.floor(Math.random() * _collConfig.hairStyles.length)];
+    State.selectHairStyle(hs);
   }
-
-  _layers.forEach(layer => {
-    if (layer.id === 'hair-back') return;
-    const available = layer.assets.filter(a => a.src !== undefined && !blocked.includes(a.id));
-    if (available.length) result[layer.id] = available[Math.floor(Math.random() * available.length)].id;
-  });
-  return result;
-}
-
-function doRandom() {
-  // Baraja colores también
-  if (_colorTokens) {
-    const skins  = _colorTokens['skin-color'].palette;
-    const shirts = _colorTokens['shirt-color'].palette;
-    AvatarState.setToken('skin-color',  skins [Math.floor(Math.random() * skins.length)].hex);
-    AvatarState.setToken('shirt-color', shirts[Math.floor(Math.random() * shirts.length)].hex);
-    // Cabello: hue aleatorio
-    const randHue = Math.random() * 360;
-    const randSat = 60 + Math.random() * 30;
-    const randLit = 32 + Math.random() * 38;
-    _hairHue = randHue; _hairSat = randSat;
-    const hex = hslToHex(randHue, randSat, randLit);
-    AvatarState.setToken('hair-color', hex);
-    _updateHairUI(hex, randLit);
-    Engine.clearCache();
-    // Sync swatches
-    _syncSwatchSelected('skin-color',  AvatarState.getToken('skin-color'));
-    _syncSwatchSelected('shirt-color', AvatarState.getToken('shirt-color'));
+  if (_collConfig.headAccessories?.length) {
+    const ha = _collConfig.headAccessories[Math.floor(Math.random() * _collConfig.headAccessories.length)];
+    State.selectHeadAccessory(ha);
   }
-  Object.entries(_randomSelections()).forEach(([k, v]) => AvatarState.setSelection(k, v));
-}
-
-// ── Compatibility enforcer ──
-function _enforceCompatibility() {
-  const state = AvatarState.get();
-  const hairLayer = _layers.find(l => l.id === 'hair-back');
-  if (!hairLayer) return;
-  const ha = hairLayer.assets.find(a => a.id === state.selections['hair-back']);
-  const blocked = ha?.blocksAccessories || [];
-  if (!blocked.length) return;
-
-  ['accessory-head'].forEach(layerId => {
-    const cur = state.selections[layerId];
-    if (cur && blocked.includes(cur)) {
-      // Auto-deselect → primera opción disponible (generalmente "ninguno")
-      const layer = _layers.find(l => l.id === layerId);
-      const fallback = layer?.assets.find(a => !blocked.includes(a.id));
-      if (fallback) {
-        AvatarState.setSelection(layerId, fallback.id);
-        showCompatToast(`⚠ ${layer.label}: "${layer.assets.find(a=>a.id===cur)?.label}" no disponible con este cabello`);
-      }
+  // Capas individuales simples
+  const simpleLayers = ['background','emotion','body-base','head','shirt','facial-hair','mask','accessory-face','frame'];
+  simpleLayers.forEach(id => {
+    const layer = _layers.find(l => l.id === id);
+    if (!layer) return;
+    const available = layer.assets.filter(a => a.src !== undefined);
+    if (available.length) {
+      const pick = available[Math.floor(Math.random() * available.length)];
+      State.setAsset(id, pick.src);
     }
   });
 }
 
-function showCompatToast(msg) {
-  const existing = document.querySelector('.compat-toast');
-  if (existing) existing.remove();
-  const t = document.createElement('div');
-  t.className = 'compat-toast';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
+function doRandom() {
+  const skinToken  = _getTokenConfig('skin-color');
+  const shirtToken = _getTokenConfig('shirt-color');
+  if (skinToken?.palette)  State.setToken('skin-color',  skinToken.palette [Math.floor(Math.random() * skinToken.palette.length)].hex);
+  if (shirtToken?.palette) State.setToken('shirt-color', shirtToken.palette[Math.floor(Math.random() * shirtToken.palette.length)].hex);
+
+  const randHue = Math.random() * 360;
+  const randSat = 60 + Math.random() * 30;
+  const randLit = 32 + Math.random() * 38;
+  _hairHue = randHue; _hairSat = randSat;
+  const hex = hslToHex(randHue, randSat, randLit);
+  State.setToken('hair-color', hex);
+  _updateHairUI(hex, randLit);
+  Engine.clearCache();
+  _syncSwatchSelected('skin-color',  State.getToken('skin-color'));
+  _syncSwatchSelected('shirt-color', State.getToken('shirt-color'));
+
+  _applyRandomSelections();
 }
 
 // ── Render ──
@@ -709,9 +727,9 @@ function scheduleRender() {
 
 async function doRender() {
   spinner.classList.add('active');
-  const state = AvatarState.get();
+  const state = State.get();
   try {
-    await Engine.render(canvas, _layers, state.selections, state.tokens);
+    await Engine.render(canvas, _layers, state.selectedAssets, state.tokens);
   } catch(e) {
     console.error('Render error', e);
   } finally {
@@ -720,18 +738,21 @@ async function doRender() {
 }
 
 // ── Build UI ──
-const LAYER_SLOTS = [
-  'background','emotion','body','head','hair-back','hair-front','shirt',
-  'accessory-body','facial-hair','accessory-head','accessory-face','mask'
+// Capas simples (asset individual, no pares)
+const SIMPLE_LAYER_SLOTS = [
+  'background', 'emotion', 'body-base', 'head',
+  'shirt', 'facial-hair', 'accessory-face', 'mask', 'frame'
 ];
 
 function buildUI() {
-  LAYER_SLOTS.forEach(id => {
+  SIMPLE_LAYER_SLOTS.forEach(id => {
     const layer = _layers.find(l => l.id === id);
     const slot  = document.getElementById('slot-' + id);
     if (!layer || !slot) return;
     renderLayerRow(layer, slot);
   });
+  buildHairStyleSelector();
+  buildHeadAccessorySelector();
 }
 
 function renderLayerRow(layer, container) {
@@ -753,29 +774,21 @@ function renderLayerRow(layer, container) {
   grid.className = 'asset-grid';
   grid.id = 'grid-' + layer.id;
   container.appendChild(grid);
-  refreshLayerGrid(layer.id);
+  refreshSimpleLayerGrid(layer.id);
 }
 
-function refreshLayerGrid(layerId) {
+function refreshSimpleLayerGrid(layerId) {
   const grid  = document.getElementById('grid-' + layerId);
   const layer = _layers.find(l => l.id === layerId);
   if (!grid || !layer) return;
 
-  const state = AvatarState.get();
-  const hairLayer = _layers.find(l => l.id === 'hair-back');
-  let blocked = [];
-  if (hairLayer && state.selections['hair-back']) {
-    const ha = hairLayer.assets.find(a => a.id === state.selections['hair-back']);
-    if (ha?.blocksAccessories) blocked = ha.blocksAccessories;
-  }
-
-  const visible  = layer.assets.filter(a => !blocked.includes(a.id));
-  const selected = state.selections[layerId];
+  const state = State.get();
+  const selected = state.selectedAssets[layerId];
 
   grid.innerHTML = '';
-  visible.forEach(asset => {
+  layer.assets.forEach(asset => {
     const btn = document.createElement('button');
-    btn.className = 'asset-btn' + (asset.id === selected ? ' selected' : '');
+    btn.className = 'asset-btn' + (asset.src === selected ? ' selected' : '');
     btn.title = asset.label;
 
     const thumb = document.createElement('canvas');
@@ -783,19 +796,18 @@ function refreshLayerGrid(layerId) {
     btn.appendChild(thumb);
     renderThumb(thumb, asset, layer, state.tokens);
 
-    if (AvatarState.isUnlocked(layerId, asset.id)) {
+    if (State.isUnlocked(layerId, asset.src)) {
       const badge = document.createElement('span');
       badge.className = 'unlock-badge';
       badge.textContent = '✦';
       btn.appendChild(badge);
     }
 
-    if (!asset.locked) {
-      btn.onclick = () => AvatarState.setSelection(layerId, asset.id);
+    if (!layer.locked) {
+      btn.onclick = () => State.setAsset(layerId, asset.src);
     } else {
       btn.classList.add('locked-asset');
     }
-
     grid.appendChild(btn);
   });
 }
@@ -813,38 +825,156 @@ async function renderThumb(thumbCanvas, asset, layer, tokens) {
     ctx.stroke();
     return;
   }
-  const bindings = {};
-  if (layer.colorBinding && layer.svgTarget && tokens[layer.colorBinding]) {
-    bindings[layer.svgTarget] = tokens[layer.colorBinding];
-  }
   const tmpCanvas = document.createElement('canvas');
   tmpCanvas.width = tmpCanvas.height = 1000;
   try {
-    await Engine.render(tmpCanvas, [layer], { [layer.id]: asset.id }, tokens);
+    await Engine.render(tmpCanvas, [layer], { [layer.id]: asset.src }, tokens);
     ctx.clearRect(0,0,48,48);
     ctx.drawImage(tmpCanvas, 0, 0, 48, 48);
   } catch(e) { /* silencioso */ }
 }
 
-// ── Color UI (skin + shirt) ──
-function buildColorUI() {
-  if (!_colorTokens) return;
-  const state = AvatarState.get();
-  _buildPresetGrid('token-skin-color',  'skin-color',  state.tokens['skin-color']);
-  _buildPresetGrid('token-shirt-color', 'shirt-color', state.tokens['shirt-color']);
+// ── Pair selectors ──
+
+function buildHairStyleSelector() {
+  const slot = document.getElementById('slot-hair-style');
+  if (!slot) return;
+  slot.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'layer-row-header';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'layer-name';
+  nameEl.textContent = 'Cabello';
+  header.appendChild(nameEl);
+  slot.appendChild(header);
+  const grid = document.createElement('div');
+  grid.className = 'asset-grid';
+  grid.id = 'grid-hair-style';
+  slot.appendChild(grid);
+  refreshHairStyleSelector();
 }
 
-function _buildPresetGrid(containerId, tokenId, currentHex) {
-  const grid = document.getElementById(containerId);
+function refreshHairStyleSelector() {
+  const grid = document.getElementById('grid-hair-style');
+  if (!grid || !_collConfig.hairStyles) return;
+  const state = State.get();
   grid.innerHTML = '';
-  _colorTokens[tokenId].palette.forEach(c => {
+  _collConfig.hairStyles.forEach(style => {
+    const btn = document.createElement('button');
+    btn.className = 'pair-btn' + (state.activeHairStyle === style.id ? ' selected' : '');
+    btn.title = style.label;
+
+    const thumb = document.createElement('canvas');
+    thumb.width = thumb.height = 40;
+    btn.appendChild(thumb);
+    _renderPairThumb(thumb, style.back, 'hair-back', state.tokens);
+
+    const lbl = document.createElement('span');
+    lbl.className = 'pair-label';
+    lbl.textContent = style.label;
+    btn.appendChild(lbl);
+
+    btn.onclick = () => {
+      State.selectHairStyle(style);
+      if (state.activeHairStyle !== style.id) {
+        const blocked = style.blockedAccessories || [];
+        if (state.activeHeadAccessory && blocked.includes(state.activeHeadAccessory)) {
+          showCompatToast(`⚠ Accesorio no compatible con ${style.label}`);
+        }
+      }
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function buildHeadAccessorySelector() {
+  const slot = document.getElementById('slot-head-accessory');
+  if (!slot) return;
+  slot.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'layer-row-header';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'layer-name';
+  nameEl.textContent = 'Accesorio cabeza';
+  header.appendChild(nameEl);
+  slot.appendChild(header);
+  const grid = document.createElement('div');
+  grid.className = 'asset-grid';
+  grid.id = 'grid-head-accessory';
+  slot.appendChild(grid);
+  refreshHeadAccessorySelector();
+}
+
+function refreshHeadAccessorySelector() {
+  const grid = document.getElementById('grid-head-accessory');
+  if (!grid || !_collConfig.headAccessories) return;
+  const state = State.get();
+  grid.innerHTML = '';
+  _collConfig.headAccessories.forEach(acc => {
+    const btn = document.createElement('button');
+    btn.className = 'pair-btn' + (state.activeHeadAccessory === acc.id ? ' selected' : '');
+    btn.title = acc.label;
+
+    const thumb = document.createElement('canvas');
+    thumb.width = thumb.height = 40;
+    btn.appendChild(thumb);
+    _renderPairThumb(thumb, acc.back, 'accessory-back', state.tokens);
+
+    const lbl = document.createElement('span');
+    lbl.className = 'pair-label';
+    lbl.textContent = acc.label;
+    btn.appendChild(lbl);
+
+    btn.onclick = () => State.selectHeadAccessory(acc);
+    grid.appendChild(btn);
+  });
+}
+
+async function _renderPairThumb(thumbCanvas, fileSrc, layerId, tokens) {
+  const ctx = thumbCanvas.getContext('2d');
+  if (!fileSrc) {
+    ctx.fillStyle = '#1A1A22';
+    ctx.fillRect(0, 0, 40, 40);
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(14,14); ctx.lineTo(26,26);
+    ctx.moveTo(26,14); ctx.lineTo(14,26);
+    ctx.stroke();
+    return;
+  }
+  const layer = _layers.find(l => l.id === layerId) || { id: layerId, colorBinding: null, svgTarget: null };
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = tmpCanvas.height = 1000;
+  try {
+    await Engine.render(tmpCanvas, [layer], { [layerId]: fileSrc }, tokens);
+    ctx.clearRect(0,0,40,40);
+    ctx.drawImage(tmpCanvas, 0, 0, 40, 40);
+  } catch(e) { /* silencioso */ }
+}
+
+// ── Color UI ──
+function buildColorUI() {
+  if (!_colorTokens) return;
+  const state = State.get();
+  const skinToken  = _getTokenConfig('skin-color');
+  const shirtToken = _getTokenConfig('shirt-color');
+  if (skinToken?.palette)  _buildPresetGrid('token-skin-color',  'skin-color',  state.tokens['skin-color'],  skinToken.palette);
+  if (shirtToken?.palette) _buildPresetGrid('token-shirt-color', 'shirt-color', state.tokens['shirt-color'], shirtToken.palette);
+}
+
+function _buildPresetGrid(containerId, tokenId, currentHex, palette) {
+  const grid = document.getElementById(containerId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  palette.forEach(c => {
     const sw = document.createElement('div');
     sw.className = 'color-swatch' + (currentHex === c.hex ? ' selected' : '');
     sw.style.background = c.hex;
     sw.title = c.name;
     sw.dataset.hex = c.hex;
     sw.onclick = () => {
-      AvatarState.setToken(tokenId, c.hex);
+      State.setToken(tokenId, c.hex);
       Engine.clearCache();
       _syncSwatchSelected(tokenId, c.hex);
     };
@@ -859,16 +989,35 @@ function _syncSwatchSelected(tokenId, hex) {
   });
 }
 
-// ── Hair wheel — rueda cromática custom con cursor y slider ──
+// ── Hair wheel ──
 function buildHairWheel() {
   const wCanvas = document.getElementById('hair-canvas-wheel');
   const ctx     = wCanvas.getContext('2d');
   const SIZE    = 160;
   const cx = SIZE/2, cy = SIZE/2, r = SIZE/2 - 4;
-  const state   = AvatarState.get();
+  const state   = State.get();
   const slider  = document.getElementById('hair-lightness');
+  const hairTokenConfig = _getTokenConfig('hair-color');
 
-  // Pixel buffer de la rueda (sin cursor) — se regenera solo una vez por cambio de luminosidad
+  // Presets de cabello
+  if (hairTokenConfig?.presets) {
+    const row = document.getElementById('hair-presets-row');
+    hairTokenConfig.presets.forEach(p => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch';
+      sw.style.background = p.hex;
+      sw.title = p.name;
+      sw.onclick = () => {
+        const { h, s, l } = ColorEngine.hexToHSL(p.hex);
+        _hairHue = h; _hairSat = s;
+        slider.value = l;
+        _drawWheel(l);
+        applyColor(p.hex, ..._hexToWheelPos(p.hex, r, cx, cy));
+      };
+      row.appendChild(sw);
+    });
+  }
+
   let _baseImageData = null;
   let _currentLit = parseInt(slider.value);
 
@@ -881,7 +1030,7 @@ function buildHairWheel() {
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > r) { imgData.data[(y*SIZE+x)*4+3] = 0; continue; }
         const hue = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
-        const sat = 58 + (dist/r)*37;    // 58-95 %
+        const sat = 58 + (dist/r)*37;
         const [rr,gg,bb] = hslToRgb(hue/360, sat/100, lit/100);
         const i = (y*SIZE+x)*4;
         imgData.data[i]=rr; imgData.data[i+1]=gg; imgData.data[i+2]=bb; imgData.data[i+3]=255;
@@ -892,7 +1041,6 @@ function buildHairWheel() {
   }
 
   function _drawCursor(px, py) {
-    // Restaura la rueda base antes de dibujar el cursor
     if (_baseImageData) ctx.putImageData(_baseImageData, 0, 0);
     ctx.beginPath();
     ctx.arc(px, py, 7, 0, Math.PI*2);
@@ -906,26 +1054,19 @@ function buildHairWheel() {
     ctx.stroke();
   }
 
-  // Convierte hex → posición (px, py) en la rueda
-  function _hexToWheelPos(hex) {
+  function _hexToWheelPos(hex, _r, _cx, _cy) {
     const { h, s, l } = ColorEngine.hexToHSL(hex);
-    const angleDeg = h;
-    const dist     = Math.max(0, Math.min(1, (s - 58) / 37)) * r;
-    const rad = angleDeg * Math.PI / 180;
-    return { px: cx + Math.cos(rad)*dist, py: cy + Math.sin(rad)*dist, lit: l };
+    const dist = Math.max(0, Math.min(1, (s - 58) / 37)) * (_r ?? r);
+    const rad = h * Math.PI / 180;
+    return [(_cx ?? cx) + Math.cos(rad)*dist, (_cy ?? cy) + Math.sin(rad)*dist, l];
   }
 
   function applyColor(hex, px, py) {
     document.getElementById('hair-preview-swatch').style.background = hex;
     document.getElementById('hair-hex-label').textContent = hex;
-    AvatarState.setToken('hair-color', hex);
+    State.setToken('hair-color', hex);
     Engine.clearCache();
     if (px !== undefined) _drawCursor(px, py);
-    // Sync gradient del slider con el color actual
-    _updateSliderGradient(hex);
-  }
-
-  function _updateSliderGradient(hex) {
     const { h, s } = ColorEngine.hexToHSL(hex);
     const dark  = `hsl(${h},${s}%,15%)`;
     const mid   = `hsl(${h},${s}%,50%)`;
@@ -942,14 +1083,12 @@ function buildHairWheel() {
     applyColor(hex, px, py);
   }
 
-  // Init con valor guardado
   const savedHex = state.tokens['hair-color'] || '#8B4513';
-  const { px: initPx, py: initPy, lit: initLit } = _hexToWheelPos(savedHex);
+  const [initPx, initPy, initLit] = _hexToWheelPos(savedHex);
   slider.value = Math.round(initLit);
   _drawWheel(initLit);
   applyColor(savedHex, initPx, initPy);
 
-  // Click + drag en rueda
   let _dragging = false;
   function _handlePointer(e) {
     const rect = wCanvas.getBoundingClientRect();
@@ -968,14 +1107,11 @@ function buildHairWheel() {
   wCanvas.addEventListener('touchstart', e => { e.preventDefault(); _handlePointer(e); }, { passive:false });
   wCanvas.addEventListener('touchmove',  e => { e.preventDefault(); _handlePointer(e); }, { passive:false });
 
-  // Slider de luminosidad
   slider.addEventListener('input', () => {
     const lit = parseInt(slider.value);
     _drawWheel(lit);
-    // Recalcular el hex con el nuevo L pero mismo H,S
     const hex = hslToHex(_hairHue, _hairSat, lit);
-    // Recalcular posición del cursor en la nueva rueda
-    const { px, py } = _hexToWheelPos(hex);
+    const [px, py] = _hexToWheelPos(hex);
     applyColor(hex, px, py);
   });
 }
@@ -986,14 +1122,14 @@ function hslToRgb(h, s, l) {
   if (s===0) { r=g=b=l; }
   else {
     const q = l<.5 ? l*(1+s) : l+s-l*s, p=2*l-q;
-    const f = (p,q,t) => {
+    const hf = (p,q,t) => {
       if(t<0)t+=1; if(t>1)t-=1;
       if(t<1/6) return p+(q-p)*6*t;
       if(t<1/2) return q;
       if(t<2/3) return p+(q-p)*(2/3-t)*6;
       return p;
     };
-    r=f(p,q,h+1/3); g=f(p,q,h); b=f(p,q,h-1/3);
+    r=hf(p,q,h+1/3); g=hf(p,q,h); b=hf(p,q,h-1/3);
   }
   return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
 }
@@ -1009,29 +1145,36 @@ function _updateHairUI(hex, lit) {
   document.getElementById('hair-lightness').value = Math.round(lit);
 }
 
-// ── Refresh UI tras cambio de estado ──
-function refreshSelectionUI() {
-  LAYER_SLOTS.forEach(id => refreshLayerGrid(id));
+function showCompatToast(msg) {
+  const existing = document.querySelector('.compat-toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'compat-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
 }
 
-// ── Export modal ──
+// ── Refresh UI tras cambio de estado ──
+function refreshSelectionUI() {
+  SIMPLE_LAYER_SLOTS.forEach(id => refreshSimpleLayerGrid(id));
+  refreshHairStyleSelector();
+  refreshHeadAccessorySelector();
+}
+
+// ── Export ──
 async function openExportModal() {
   const modal = document.getElementById('export-modal');
   modal.classList.add('open');
-
   const expCanvas = document.getElementById('export-preview');
-  const state = AvatarState.get();
-
-  // Renderizar en 1000×1000 real
-  await Engine.render(expCanvas, _layers, state.selections, state.tokens);
-
+  const state = State.get();
+  await Engine.render(expCanvas, _layers, state.selectedAssets, state.tokens);
   const date = new Date().toLocaleDateString('es', { day:'numeric', month:'long', year:'numeric' });
   document.getElementById('export-title').textContent = 'Tu Avatar';
   document.getElementById('export-sub').textContent =
-    `${_collConfig.label || 'Colección 6'} · Avatar OS · ${date}`;
+    `${_collConfig.name || 'Colección 6'} · Avatar OS · ${date}`;
   document.getElementById('export-message').textContent =
     _collConfig.exportMessage || '¡Tu avatar ha sido creado! Descárgalo y compártelo.';
-
   launchConfetti();
 }
 
@@ -1041,7 +1184,6 @@ function closeExportModal() {
 }
 
 function downloadPNG() {
-  // Descarga desde el canvas fuente (1000×1000)
   const src = canvas.toDataURL('image/png');
   const a = document.createElement('a');
   a.href = src;
@@ -1130,28 +1272,28 @@ async function handleKeyword() {
     return;
   }
 
-  if (AvatarState.hasKeyword(match.keyword)) {
+  if (State.hasKeyword(match.keyword)) {
     feedback.textContent = '✦ Clave ya activada: ' + match.label;
     feedback.className = 'success';
     setTimeout(() => { feedback.textContent = ''; feedback.className = ''; }, 2500);
     return;
   }
 
-  AvatarState.addKeyword(match.keyword);
+  State.addKeyword(match.keyword);
   feedback.textContent = '✦ ¡Desbloqueado! ' + match.label;
   feedback.className = 'success';
   input.value = '';
 
-  // Inyectar assets desbloqueados
+  // Inyectar assets desbloqueados en las capas simples
   const assets = KeywordEngine.getUnlockedAssets(match);
   assets.forEach(({ layerHint, src, fromKeyword }) => {
-    const layer = _layers.find(l => l.id.includes(layerHint) || l.label.toLowerCase().includes(layerHint));
+    const layer = _layers.find(l => l.id === layerHint || l.label.toLowerCase().includes(layerHint));
     if (layer) {
       const newId = fromKeyword.toLowerCase() + '-' + layerHint;
       if (!layer.assets.find(a => a.id === newId)) {
         layer.assets.push({ id: newId, label: match.label, src, fromKeyword });
       }
-      AvatarState.unlockAssets(layer.id, [newId]);
+      State.unlockAssets(layer.id, [src]);
     }
   });
 
