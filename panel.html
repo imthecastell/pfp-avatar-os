@@ -502,6 +502,7 @@
     <button class="tab active" data-tab="layers">Capas</button>
     <button class="tab" data-tab="tokens">Colores</button>
     <button class="tab" data-tab="keywords">Keywords</button>
+    <button class="tab" data-tab="batch">📦 Lote</button>
   </div>
   <div class="topbar-sep"></div>
   <span id="save-status"></span>
@@ -548,6 +549,9 @@
 </div>
 
 <!-- Scripts -->
+<script src="js/asset-scaler.js"></script>
+<script src="js/svg-processor.js"></script>
+<script src="js/batch-uploader.js"></script>
 <script src="js/color-engine.js"></script>
 <script src="js/state.js"></script>
 <script src="js/engine.js"></script>
@@ -609,8 +613,9 @@ async function init() {
 
 function _flatTokens() {
   const out = {};
-  Object.entries(_tokens).forEach(([id, def]) => {
-    out[id] = def.default || (def.palette?.[2]?.hex) || '#888';
+  const list = _tokens.tokens || Object.entries(_tokens).map(([id, def]) => ({ id, ...def }));
+  list.forEach(def => {
+    out[def.id] = def.default || (def.palette?.[2]?.hex) || '#888';
   });
   return out;
 }
@@ -623,6 +628,7 @@ function switchTab(tab) {
   if (tab === 'layers') renderLayersTab();
   else if (tab === 'tokens') renderTokensTab();
   else if (tab === 'keywords') renderKeywordsTab();
+  else if (tab === 'batch') renderBatchTab();
 }
 
 // ── Layers tab ──
@@ -933,6 +939,235 @@ function showToast(msg, type = 'success') {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+// ── Batch upload tab ──
+function renderBatchTab() {
+  sidebarLeft.innerHTML = `
+    <div style="padding:12px">
+      <div class="panel-title" style="margin-bottom:10px">Nomenclatura</div>
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.7">
+        <code>head-*</code> → Rostro<br>
+        <code>hair-back-*</code> → Cabello atrás<br>
+        <code>hair-front-*</code> → Cabello frente<br>
+        <code>hair-*</code> → Cabello atrás<br>
+        <code>acc-back-*</code> → Acc. atrás<br>
+        <code>acc-front-*</code> → Acc. frente<br>
+        <code>acc-face-*</code> → Lentes<br>
+        <code>glasses-*</code> → Lentes<br>
+        <code>bg-*</code> → Fondo<br>
+        <code>shirt-*</code> → Camiseta<br>
+        <code>body-*</code> → Cuerpo<br>
+        <code>mask-*</code> → Máscara<br>
+        <code>fhair-*</code> → Vello facial<br>
+        <code>frame-*</code> → Marco<br>
+        <code>emotion-*</code> → Emoción
+      </div>
+    </div>`;
+
+  centerContent.innerHTML = '';
+
+  // ── Estado local del batch ──
+  let _batchItems = [];
+
+  // ── Drop zone ──
+  const dropzone = document.createElement('div');
+  dropzone.className = 'dropzone';
+  dropzone.style.marginBottom = '16px';
+  dropzone.innerHTML = `
+    <div style="font-size:28px;margin-bottom:8px">📂</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px">Arrastra tus SVG/PNG aquí</div>
+    <div style="font-size:11px;margin-bottom:12px">o haz clic para seleccionar archivos</div>
+    <input type="file" id="batch-file-input" multiple accept=".svg,.png,.jpg" style="display:none">
+    <label for="batch-file-input" class="btn-sm btn-accent" style="cursor:pointer">Seleccionar archivos</label>`;
+  centerContent.appendChild(dropzone);
+
+  // ── Tabla de resultados ──
+  const resultArea = document.createElement('div');
+  resultArea.id = 'batch-result-area';
+  centerContent.appendChild(resultArea);
+
+  // Eventos drag & drop
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('active'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('active'));
+  dropzone.addEventListener('drop', async e => {
+    e.preventDefault();
+    dropzone.classList.remove('active');
+    await _processBatchFiles([...e.dataTransfer.files]);
+  });
+  dropzone.querySelector('#batch-file-input').addEventListener('change', async e => {
+    await _processBatchFiles([...e.target.files]);
+    e.target.value = '';
+  });
+
+  async function _processBatchFiles(files) {
+    resultArea.innerHTML = '<div style="color:var(--text-muted);padding:12px">Procesando...</div>';
+    _batchItems = await BatchUploader.processFiles(files);
+    _renderBatchTable();
+  }
+
+  function _renderBatchTable() {
+    resultArea.innerHTML = '';
+    if (!_batchItems.length) return;
+
+    const groups = BatchUploader.groupByLayer(_batchItems);
+    const layerOptions = ['', ..._layers.map(l => l.id)].map(id =>
+      `<option value="${id}">${id || '— seleccionar —'}</option>`
+    ).join('');
+
+    // Stats header
+    const valid   = _batchItems.filter(i => i.valid).length;
+    const invalid = _batchItems.length - valid;
+    const statsBar = document.createElement('div');
+    statsBar.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px';
+    statsBar.innerHTML = `
+      <span style="color:var(--success)">✓ ${valid} válidos</span>
+      ${invalid ? `<span style="color:var(--danger)">✗ ${invalid} con errores</span>` : ''}
+      <span style="color:var(--text-muted)">${_batchItems.length} archivos total</span>
+      <button class="btn-sm btn-accent" id="btn-apply-batch" style="margin-left:auto"
+        ${valid === 0 ? 'disabled' : ''}>Aplicar ${valid} assets →</button>`;
+    resultArea.appendChild(statsBar);
+
+    // Tabla agrupada por capa
+    for (const [groupKey, items] of Object.entries(groups)) {
+      const section = document.createElement('div');
+      section.style.cssText = 'margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden';
+
+      const layerLabel = _layers.find(l => l.id === groupKey)?.label || groupKey;
+      section.innerHTML = `
+        <div style="padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">
+          ${groupKey === '__unknown__' ? '⚠ Sin capa detectada' : `${layerLabel} <code style="font-weight:400;text-transform:none">${groupKey}</code>`}
+          <span style="margin-left:8px;color:var(--text)">${items.length} archivo${items.length>1?'s':''}</span>
+        </div>`;
+
+      const table = document.createElement('table');
+      table.style.cssText = 'width:100%;border-collapse:collapse';
+      table.innerHTML = `
+        <thead>
+          <tr style="font-size:10px;color:var(--text-muted);border-bottom:1px solid var(--border)">
+            <th style="padding:6px 12px;text-align:left;width:52px">Preview</th>
+            <th style="padding:6px 12px;text-align:left">Archivo</th>
+            <th style="padding:6px 12px;text-align:left;width:180px">Capa destino</th>
+            <th style="padding:6px 12px;text-align:left;width:80px">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-${groupKey.replace(/[^a-z0-9]/g,'-')}"></tbody>`;
+      section.appendChild(table);
+      resultArea.appendChild(section);
+
+      const tbody = table.querySelector('tbody');
+      items.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom:1px solid var(--border);transition:background .1s';
+        tr.onmouseenter = () => tr.style.background = 'var(--surface2)';
+        tr.onmouseleave = () => tr.style.background = '';
+
+        const statusHtml = item.valid
+          ? `<span style="color:var(--success)">✓ OK${item.warnings.length ? ` <span style="color:var(--warn)" title="${item.warnings.join(' | ')}">⚠</span>` : ''}</span>`
+          : `<span style="color:var(--danger)" title="${item.errors.join(' | ')}">✗ Error</span>`;
+
+        const selectedLayer = item.assignedLayer || item.detectedLayer || '';
+        const opts = layerOptions.replace(
+          `value="${selectedLayer}"`,
+          `value="${selectedLayer}" selected`
+        );
+
+        tr.innerHTML = `
+          <td style="padding:6px 12px">
+            ${item.previewUrl
+              ? `<img src="${item.previewUrl}" style="width:40px;height:40px;object-fit:contain;border-radius:4px;background:#111">`
+              : `<div style="width:40px;height:40px;background:var(--surface2);border-radius:4px"></div>`}
+          </td>
+          <td style="padding:6px 12px;font-size:11px;font-family:monospace;color:var(--text)">${item.name}</td>
+          <td style="padding:6px 12px">
+            <select class="layer-assign" data-item-idx="${_batchItems.indexOf(item)}" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--text);font-size:11px;width:100%">
+              ${opts}
+            </select>
+          </td>
+          <td style="padding:6px 12px;font-size:11px">${statusHtml}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Eventos en selects de corrección de capa
+    resultArea.querySelectorAll('.layer-assign').forEach(sel => {
+      sel.onchange = () => {
+        const idx = parseInt(sel.dataset.itemIdx);
+        _batchItems[idx].assignedLayer = sel.value || null;
+        // Re-render conservando items
+        const current = _batchItems;
+        _batchItems = current;
+        // Solo actualizar stats bar
+        const valid = _batchItems.filter(i => i.valid && (i.assignedLayer || i.detectedLayer)).length;
+        const applyBtn = resultArea.querySelector('#btn-apply-batch');
+        if (applyBtn) applyBtn.textContent = `Aplicar ${valid} assets →`;
+      };
+    });
+
+    // Botón Aplicar
+    const applyBtn = resultArea.querySelector('#btn-apply-batch');
+    if (applyBtn) {
+      applyBtn.onclick = () => {
+        const { added, skipped, copyInstructions } = BatchUploader.applyToLayers(_batchItems, _layers);
+
+        if (added === 0) {
+          showToast('No se agregaron assets (duplicados o sin capa)', 'error');
+          return;
+        }
+
+        markDirty();
+        LayerPanel.refresh?.(_layers);
+        PreviewPanel.updateLayers?.(_layers);
+
+        // Instrucciones de copia
+        _renderCopyInstructions(copyInstructions, added, skipped);
+        showToast(`✓ ${added} assets agregados a la config`, 'success');
+      };
+    }
+  }
+
+  function _renderCopyInstructions(instructions, added, skipped) {
+    const existing = resultArea.querySelector('#copy-instructions');
+    if (existing) existing.remove();
+
+    const box = document.createElement('div');
+    box.id = 'copy-instructions';
+    box.style.cssText = 'margin-top:16px;background:var(--surface);border:1px solid var(--warn);border-radius:var(--radius);padding:14px';
+
+    const grouped = {};
+    instructions.forEach(({ file, dest }) => {
+      if (!grouped[dest]) grouped[dest] = [];
+      grouped[dest].push(file);
+    });
+
+    let html = `
+      <div style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:10px">
+        ✓ ${added} assets añadidos · ${skipped} omitidos
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">
+        Copia los archivos a las carpetas correspondientes del proyecto:
+      </div>`;
+
+    for (const [dest, files] of Object.entries(grouped)) {
+      html += `<div style="margin-bottom:8px">
+        <code style="color:var(--accent2);font-size:11px">${dest}</code>
+        <div style="margin-top:4px;margin-left:12px;font-size:11px;color:var(--text)">
+          ${files.map(f => `• ${f}`).join('<br>')}
+        </div>
+      </div>`;
+    }
+
+    html += `<div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn-sm btn-accent" id="btn-export-after-batch">↓ Exportar layer-config.json</button>
+    </div>`;
+
+    box.innerHTML = html;
+    resultArea.appendChild(box);
+
+    box.querySelector('#btn-export-after-batch').onclick = () => {
+      AssetManager.exportLayerConfig(_layers);
+    };
+  }
 }
 
 // ── Refresh all after import ──
