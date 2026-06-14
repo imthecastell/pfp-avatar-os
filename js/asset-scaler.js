@@ -15,9 +15,9 @@
 const AssetScaler = {
 
   SIZES: {
-    CANVAS:  2048,
+    CANVAS:  1000,
     PREVIEW: 600,
-    EXPORT:  2048,
+    EXPORT:  1000,
     THUMB:   120,
   },
 
