@@ -111,7 +111,7 @@ const Engine = (() => {
 
         ctx.save();
         const blend = layer.blendMode || 'source-over';
-        ctx.globalCompositeOperation = blend === 'normal' ? 'source-over' : blend;
+        ctx.globalCompositeOperation = (blend === 'normal' || blend === 'pass-through') ? 'source-over' : blend;
         ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
         ctx.restore();
       } catch (e) {

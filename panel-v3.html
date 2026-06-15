@@ -443,6 +443,10 @@
         <button class="btn btn-ghost btn-sm" style="flex:1" id="btn-preview-random">🎲</button>
         <button class="btn btn-ghost btn-sm" style="flex:1" id="btn-preview-refresh">↺</button>
       </div>
+      <div class="section-label">Color de piel</div>
+      <div id="preview-skin-swatches" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px;"></div>
+      <div class="section-label">Color de cabello</div>
+      <div id="preview-hair-swatches" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px;"></div>
       <div class="section-label">Capas visibles</div>
       <div id="layer-toggle-list" class="layer-toggle-list"></div>
     </div>
@@ -667,8 +671,12 @@ const _sessionBlobs = new Map();  // assetId → objectURL
 let _isDirty  = false;
 
 // Preview state (lightweight, not persisted)
-const _previewSel  = {};   // layerId → assetId
-const _layerVis    = {};   // layerId → boolean
+const _previewSel    = {};   // layerId → assetId
+const _layerVis      = {};   // layerId → boolean
+const _previewTokens = { 'skin-color': '#F9C7B6', 'hair-color': '#00B181' };
+
+const SKIN_SWATCHES = ['#F9C7B6','#F0A882','#D4845A','#A0522D','#6B3A2A','#FFFFFF','#000000'];
+const HAIR_SWATCHES = ['#00B181','#1a1a1a','#3b2314','#7b4f2e','#c8a96e','#e8c84a','#d44000','#cc3366','#ffffff'];
 
 const previewCanvas = document.getElementById('preview-canvas');
 
@@ -706,6 +714,7 @@ async function init() {
   _randomizePreview();
   renderLayerList();
   buildLayerToggles();
+  buildSwatches();
 
   document.getElementById('btn-add-layer').onclick    = () => openLayerModal(null);
   document.getElementById('btn-randomize').onclick    = () => { _randomizePreview(); doPreviewRender(); };
@@ -786,19 +795,47 @@ function _download(blob, filename) {
 function renderLayerList() {
   const list = document.getElementById('layer-list');
   list.innerHTML = '';
+  let _dragSrc = null;
+
   [..._layers].sort((a, b) => a.order - b.order).forEach(layer => {
     const count = _registry.assets.filter(a => a.layerId === layer.id).length;
     const item = document.createElement('div');
     item.className = 'layer-item' + (layer.id === _activeLayerId ? ' active' : '');
+    item.draggable = true;
+    item.dataset.id = layer.id;
     item.innerHTML = `
-      <span class="layer-item-order">${layer.order}</span>
+      <span class="layer-item-order" style="cursor:grab;opacity:.5" title="Arrastrar para reordenar">⠿</span>
       <div style="flex:1;min-width:0">
         <div class="layer-item-name">${layer.label}</div>
-        <div class="layer-item-id">${layer.id}</div>
+        <div class="layer-item-id">${layer.id} · ${layer.blendMode || 'source-over'}</div>
       </div>
       <span class="layer-item-count">${count}</span>
     `;
     item.onclick = () => selectLayer(layer.id);
+
+    item.addEventListener('dragstart', e => {
+      _dragSrc = layer.id;
+      e.dataTransfer.effectAllowed = 'move';
+      item.style.opacity = '.4';
+    });
+    item.addEventListener('dragend', () => { item.style.opacity = ''; });
+    item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.style.background = 'var(--surface3)'; });
+    item.addEventListener('dragleave', () => { item.style.background = ''; });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.style.background = '';
+      if (_dragSrc === layer.id) return;
+      // Reorder: swap orders
+      const sorted = [..._layers].sort((a, b) => a.order - b.order);
+      const fromIdx = sorted.findIndex(l => l.id === _dragSrc);
+      const toIdx   = sorted.findIndex(l => l.id === layer.id);
+      sorted.splice(toIdx, 0, sorted.splice(fromIdx, 1)[0]);
+      sorted.forEach((l, i) => { l.order = i; });
+      _markDirty();
+      renderLayerList();
+      buildLayerToggles();
+    });
+
     list.appendChild(item);
   });
 }
@@ -973,7 +1010,7 @@ async function _renderThumb(thumbCanvas, layer, asset) {
       const effectiveAsset = sessionSrc ? { ...asset, src: sessionSrc } : asset;
       const fakeRegistry = { assets: [effectiveAsset] };
       const fakeState = {
-        getTokens: () => ({ 'skin-color': '#F9C7B6', 'hair-color': '#00B181' }),
+        getTokens: () => ({ ..._previewTokens }),
         getSelectedAssets: () => ({ [layer.id]: effectiveAsset.id }),
       };
       await Engine.render(tmp, [layer], fakeRegistry, fakeState);
@@ -1049,7 +1086,7 @@ function openLayerModal(layer) {
     <div class="form-row">
       <label>blendMode</label>
       <select id="lm-blend">
-        ${['source-over','multiply','screen','overlay','darken','lighten','soft-light','hard-light','difference','exclusion']
+        ${['source-over','pass-through','multiply','screen','overlay','darken','lighten','soft-light','hard-light','difference','exclusion']
           .map(m => `<option ${data.blendMode===m?'selected':''}>${m}</option>`).join('')}
       </select>
     </div>
@@ -1263,7 +1300,7 @@ async function doPreviewRender() {
   };
 
   const fakeState = {
-    getTokens: () => ({ 'skin-color': '#F9C7B6', 'hair-color': '#00B181' }),
+    getTokens: () => ({ ..._previewTokens }),
     getSelectedAssets: () => ({ ..._previewSel }),
   };
   try {
@@ -1287,6 +1324,29 @@ function buildLayerToggles() {
     item.appendChild(document.createTextNode(layer.label));
     list.appendChild(item);
   });
+}
+
+function buildSwatches() {
+  function makeSwatch(tokenId, hex, container) {
+    const s = document.createElement('div');
+    const isActive = _previewTokens[tokenId] === hex;
+    s.style.cssText = `width:22px;height:22px;border-radius:50%;background:${hex};cursor:pointer;border:2px solid ${isActive ? '#fff' : 'transparent'};box-sizing:border-box;flex-shrink:0;`;
+    s.title = hex;
+    s.onclick = () => {
+      _previewTokens[tokenId] = hex;
+      Engine.clearCache();
+      buildSwatches();
+      doPreviewRender();
+    };
+    container.appendChild(s);
+  }
+
+  const skinWrap = document.getElementById('preview-skin-swatches');
+  const hairWrap = document.getElementById('preview-hair-swatches');
+  skinWrap.innerHTML = '';
+  hairWrap.innerHTML = '';
+  SKIN_SWATCHES.forEach(hex => makeSwatch('skin-color', hex, skinWrap));
+  HAIR_SWATCHES.forEach(hex => makeSwatch('hair-color', hex, hairWrap));
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
