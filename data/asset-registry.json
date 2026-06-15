@@ -1,50 +1,292 @@
 {
   "assets": [
-    { "id": "bg-teal",      "layerId": "background", "label": "Teal",           "src": "placeholder:background", "tags": [], "colorOverrides": [] },
-    { "id": "bg-blue",      "layerId": "background", "label": "Azul océano",     "src": "placeholder:background", "tags": [], "colorOverrides": [] },
-    { "id": "bg-green",     "layerId": "background", "label": "Verde bosque",    "src": "placeholder:background", "tags": [], "colorOverrides": [] },
-    { "id": "bg-sand",      "layerId": "background", "label": "Arena",           "src": "placeholder:background", "tags": [], "colorOverrides": [] },
-
-    { "id": "emotion-none",  "layerId": "emotion", "label": "Ninguna",   "src": null,                    "tags": [], "colorOverrides": [] },
-    { "id": "emotion-happy", "layerId": "emotion", "label": "Feliz",     "src": "placeholder:emotion",   "tags": [], "colorOverrides": [] },
-    { "id": "emotion-cool",  "layerId": "emotion", "label": "Cool",      "src": "placeholder:emotion",   "tags": [], "colorOverrides": [] },
-
-    { "id": "hair-back-none",  "layerId": "hair-back", "label": "Ninguno",   "src": null,                     "tags": [], "colorOverrides": [] },
-    { "id": "hair-back-short", "layerId": "hair-back", "label": "Corto",     "src": "placeholder:hair-back",  "tags": [], "colorOverrides": [] },
-    { "id": "hair-back-long",  "layerId": "hair-back", "label": "Largo",     "src": "placeholder:hair-back",  "tags": [], "colorOverrides": [] },
-
-    { "id": "head-med-square", "layerId": "head", "label": "Cuadrada media", "src": "placeholder:head", "tags": [], "colorOverrides": [] },
-    { "id": "head-round",      "layerId": "head", "label": "Redonda",        "src": "placeholder:head", "tags": [], "colorOverrides": [] },
-
-    { "id": "shirt-basic",    "layerId": "shirt", "label": "Básica",    "src": "placeholder:shirt", "tags": [], "colorOverrides": [] },
-    { "id": "shirt-hoodie",   "layerId": "shirt", "label": "Hoodie",    "src": "placeholder:shirt", "tags": [], "colorOverrides": [] },
-
-    { "id": "acc-back-none", "layerId": "acc-back", "label": "Ninguno", "src": null, "tags": [], "colorOverrides": [] },
-    { "id": "acc-back-cap",  "layerId": "acc-back", "label": "Gorra",   "src": "placeholder:acc-back", "tags": [], "colorOverrides": [] },
-
-    { "id": "hair-front-none",  "layerId": "hair-front", "label": "Ninguno", "src": null,                      "tags": [], "colorOverrides": [] },
-    { "id": "hair-front-short", "layerId": "hair-front", "label": "Corto",   "src": "placeholder:hair-front",  "tags": [], "colorOverrides": [] },
-    { "id": "hair-front-long",  "layerId": "hair-front", "label": "Largo",   "src": "placeholder:hair-front",  "tags": [], "colorOverrides": [] },
-
-    { "id": "facial-hair-none",  "layerId": "facial-hair", "label": "Ninguno",  "src": null,                       "tags": [], "colorOverrides": [] },
-    { "id": "facial-hair-beard", "layerId": "facial-hair", "label": "Barba",    "src": "placeholder:facial-hair",  "tags": [], "colorOverrides": [] },
-
-    { "id": "mask-none",     "layerId": "mask", "label": "Ninguna",  "src": null,                "tags": [], "colorOverrides": [] },
-    { "id": "mask-shades",   "layerId": "mask", "label": "Gafas",    "src": "placeholder:mask",  "tags": [], "colorOverrides": [] },
-
-    { "id": "acc-front-none", "layerId": "acc-front", "label": "Ninguno", "src": null,                    "tags": [], "colorOverrides": [] },
-    { "id": "acc-front-chain","layerId": "acc-front", "label": "Cadena",  "src": "placeholder:acc-front", "tags": [], "colorOverrides": [] },
-
-    { "id": "acc-face-none",  "layerId": "acc-face", "label": "Ninguno",   "src": null,                   "tags": [], "colorOverrides": [] },
-    { "id": "acc-face-blush", "layerId": "acc-face", "label": "Rubor",     "src": "placeholder:acc-face", "tags": [], "colorOverrides": [] },
-
-    { "id": "effect-front-none",  "layerId": "effect-front", "label": "Ninguno", "src": null,                       "tags": [], "colorOverrides": [] },
-    { "id": "effect-front-stars", "layerId": "effect-front", "label": "Estrellas","src": "placeholder:effect-front", "tags": [], "colorOverrides": [] },
-
-    { "id": "effect-final-none",  "layerId": "effect-final", "label": "Ninguno", "src": null,                       "tags": [], "colorOverrides": [] },
-    { "id": "effect-final-film",  "layerId": "effect-final", "label": "Film",    "src": "placeholder:effect-final", "tags": [], "colorOverrides": [] },
-
-    { "id": "frame-none",   "layerId": "frame", "label": "Ninguno", "src": null,               "tags": [], "colorOverrides": [] },
-    { "id": "frame-gold",   "layerId": "frame", "label": "Oro",     "src": "placeholder:frame","tags": [], "colorOverrides": [] }
+    {
+      "id": "emotion-none",
+      "layerId": "emotion",
+      "label": "Ninguna",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "emotion-happy",
+      "layerId": "emotion",
+      "label": "Feliz",
+      "src": "placeholder:emotion",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "emotion-cool",
+      "layerId": "emotion",
+      "label": "Cool",
+      "src": "placeholder:emotion",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "hair-back-none",
+      "layerId": "hair-back",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "hair-back-short",
+      "layerId": "hair-back",
+      "label": "Corto",
+      "src": "placeholder:hair-back",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "hair-back-long",
+      "layerId": "hair-back",
+      "label": "Largo",
+      "src": "placeholder:hair-back",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head-med-square",
+      "layerId": "head",
+      "label": "Cuadrada media",
+      "src": "placeholder:head",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head-round",
+      "layerId": "head",
+      "label": "Redonda",
+      "src": "placeholder:head",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "shirt-basic",
+      "layerId": "shirt",
+      "label": "Básica",
+      "src": "placeholder:shirt",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "shirt-hoodie",
+      "layerId": "shirt",
+      "label": "Hoodie",
+      "src": "placeholder:shirt",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc-back-none",
+      "layerId": "acc-back",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc-back-cap",
+      "layerId": "acc-back",
+      "label": "Gorra",
+      "src": "placeholder:acc-back",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "hair-front-none",
+      "layerId": "hair-front",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "hair-front-short",
+      "layerId": "hair-front",
+      "label": "Corto",
+      "src": "placeholder:hair-front",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "hair-front-long",
+      "layerId": "hair-front",
+      "label": "Largo",
+      "src": "placeholder:hair-front",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "facial-hair-none",
+      "layerId": "facial-hair",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "facial-hair-beard",
+      "layerId": "facial-hair",
+      "label": "Barba",
+      "src": "placeholder:facial-hair",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "mask-none",
+      "layerId": "mask",
+      "label": "Ninguna",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "mask-shades",
+      "layerId": "mask",
+      "label": "Gafas",
+      "src": "placeholder:mask",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc-front-none",
+      "layerId": "acc-front",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc-front-chain",
+      "layerId": "acc-front",
+      "label": "Cadena",
+      "src": "placeholder:acc-front",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc-face-none",
+      "layerId": "acc-face",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc-face-blush",
+      "layerId": "acc-face",
+      "label": "Rubor",
+      "src": "placeholder:acc-face",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "effect-front-none",
+      "layerId": "effect-front",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "effect-front-stars",
+      "layerId": "effect-front",
+      "label": "Estrellas",
+      "src": "placeholder:effect-front",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "effect-final-none",
+      "layerId": "effect-final",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "effect-final-film",
+      "layerId": "effect-final",
+      "label": "Film",
+      "src": "placeholder:effect-final",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "frame-none",
+      "layerId": "frame",
+      "label": "Ninguno",
+      "src": null,
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "frame-gold",
+      "layerId": "frame",
+      "label": "Oro",
+      "src": "placeholder:frame",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---arch",
+      "layerId": "background",
+      "label": "Bg   Arch",
+      "src": "assets/background/bg - arch.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-blue",
+      "layerId": "background",
+      "label": "Bg   Oleo Blue",
+      "src": "assets/background/bg - oleo blue.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-dark",
+      "layerId": "background",
+      "label": "Bg   Oleo Dark",
+      "src": "assets/background/bg - oleo dark.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-mod",
+      "layerId": "background",
+      "label": "Bg   Oleo Mod",
+      "src": "assets/background/bg - oleo Mod.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-w2",
+      "layerId": "background",
+      "label": "Bg   Oleo W2",
+      "src": "assets/background/bg - oleo W2.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---stairs",
+      "layerId": "background",
+      "label": "Bg   Stairs",
+      "src": "assets/background/bg - stairs.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---structure",
+      "layerId": "background",
+      "label": "Bg   Structure",
+      "src": "assets/background/bg - structure.png",
+      "tags": [],
+      "colorOverrides": []
+    }
   ]
 }
