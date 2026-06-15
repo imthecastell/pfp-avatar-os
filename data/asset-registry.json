@@ -137,62 +137,6 @@
       "colorOverrides": []
     },
     {
-      "id": "f-hair---plain-1781533197028",
-      "layerId": "hair-front",
-      "label": "f hair - plain",
-      "src": "assets/hair-front/f hair - plain.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "f-hair---horn-1781533197062",
-      "layerId": "hair-front",
-      "label": "f hair - horn",
-      "src": "assets/hair-front/f hair - horn.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "f-hair---afro-1781533197062",
-      "layerId": "hair-front",
-      "label": "f hair - afro",
-      "src": "assets/hair-front/f hair - afro.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "f-hair---fleco-a-1781533197063",
-      "layerId": "hair-front",
-      "label": "f hair - fleco a",
-      "src": "assets/hair-front/f hair - fleco a.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "f-hair---fleco-b-1781533197064",
-      "layerId": "hair-front",
-      "label": "f hair - fleco b",
-      "src": "assets/hair-front/f hair - fleco b.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "f-hair---festival-1781533197064",
-      "layerId": "hair-front",
-      "label": "f hair - festival",
-      "src": "assets/hair-front/f hair - festival.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "mesa-de-trabajo3-1781533197065",
-      "layerId": "hair-front",
-      "label": "Mesa de trabajo3",
-      "src": "assets/hair-front/Mesa de trabajo3.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "masc---nature-1781533255127",
       "layerId": "mask",
       "label": "masc - nature",
@@ -413,6 +357,62 @@
       "layerId": "hair-back",
       "label": "b hair - plain square",
       "src": "assets/hair-back/b hair - plain square.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---festival-1781537055879",
+      "layerId": "hair-front",
+      "label": "f hair - festival",
+      "src": "assets/hair-front/f hair - festival.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---afro-1781537055884",
+      "layerId": "hair-front",
+      "label": "f hair - afro",
+      "src": "assets/hair-front/f hair - afro.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---horn-1781537055886",
+      "layerId": "hair-front",
+      "label": "f hair - horn",
+      "src": "assets/hair-front/f hair - horn.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---fleco-b-1781537055887",
+      "layerId": "hair-front",
+      "label": "f hair - fleco b",
+      "src": "assets/hair-front/f hair - fleco b.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---plain-1781537055893",
+      "layerId": "hair-front",
+      "label": "f hair - plain",
+      "src": "assets/hair-front/f hair - plain.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "mesa-de-trabajo3-1781537055897",
+      "layerId": "hair-front",
+      "label": "Mesa de trabajo3",
+      "src": "assets/hair-front/Mesa de trabajo3.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---fleco-a-1781537055905",
+      "layerId": "hair-front",
+      "label": "f hair - fleco a",
+      "src": "assets/hair-front/f hair - fleco a.svg",
       "tags": [],
       "colorOverrides": []
     }
