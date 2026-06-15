@@ -361,14 +361,6 @@
       "colorOverrides": []
     },
     {
-      "id": "b-hair---plain-square-1781536662154",
-      "layerId": "hair-back",
-      "label": "b hair - plain square",
-      "src": "assets/hair-back/b hair - plain square.svg",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "b-hair---tails-affro-1781536662160",
       "layerId": "hair-back",
       "label": "b hair - tails affro",
@@ -401,7 +393,15 @@
       "colorOverrides": []
     },
     {
-      "id": "b-hair---long--1781536662166",
+      "id": "b-hair---plain-rounded-1781536662167",
+      "layerId": "hair-back",
+      "label": "b hair - plain rounded",
+      "src": "assets/hair-back/b hair - plain rounded.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---long--1781536715121",
       "layerId": "hair-back",
       "label": "b hair - long ",
       "src": "assets/hair-back/b hair - long .svg",
@@ -409,10 +409,10 @@
       "colorOverrides": []
     },
     {
-      "id": "b-hair---plain-rounded-1781536662167",
+      "id": "b-hair---plain-square-1781536715124",
       "layerId": "hair-back",
-      "label": "b hair - plain rounded",
-      "src": "assets/hair-back/b hair - plain rounded.svg",
+      "label": "b hair - plain square",
+      "src": "assets/hair-back/b hair - plain square.svg",
       "tags": [],
       "colorOverrides": []
     }
