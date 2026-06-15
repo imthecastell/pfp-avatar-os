@@ -386,8 +386,28 @@
   <div class="topbar-actions">
     <button class="btn btn-ghost btn-sm" id="btn-randomize">🎲 Aleatorio</button>
     <button class="btn btn-accent btn-sm" id="btn-batch-upload">📦 Carga por lote</button>
-    <button class="btn btn-accent btn-sm" id="btn-export-zip">⬇ Exportar deploy</button>
+    <button class="btn btn-ghost btn-sm" id="btn-gh-config" title="Configurar GitHub token">⚙ GitHub</button>
     <a href="index.html" target="_blank" class="btn btn-ghost btn-sm">← Builder</a>
+  </div>
+
+  <!-- Modal config GitHub -->
+  <div id="gh-config-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;width:420px;max-width:95vw;">
+      <h2 style="font-size:14px;margin-bottom:6px;">Configurar GitHub Deploy</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:18px;">
+        El token se guarda solo en tu navegador y nunca se sube al repo.
+        Necesitás un PAT con permiso <strong>Contents: Read &amp; write</strong> en <code>imthecastell/pfp-avatar-os</code>.
+      </p>
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Personal Access Token</label>
+      <input id="gh-token-input" type="password" placeholder="github_pat_…"
+        style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;margin-bottom:16px;font-family:monospace;" />
+      <div id="gh-token-status" style="font-size:12px;min-height:18px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" id="gh-config-cancel">Cancelar</button>
+        <button class="btn btn-ghost btn-sm" id="gh-token-test">Probar conexión</button>
+        <button class="btn btn-accent btn-sm" id="gh-token-save">Guardar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -502,6 +522,122 @@ async function _idbGetAll() {
   });
 }
 
+// ── GitHub API ────────────────────────────────────────────────────────────
+const GH_REPO  = 'imthecastell/pfp-avatar-os';
+const GH_BRANCH = 'main';
+const GH_TOKEN_KEY = 'avatar-os-gh-token';
+
+function _ghToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
+
+async function _ghFetch(path, method, body) {
+  const token = _ghToken();
+  if (!token) throw new Error('Sin token GitHub configurado');
+  const res = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github+json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `GitHub API ${res.status}`);
+  }
+  return res.json();
+}
+
+async function _ghGetSHA(path) {
+  try {
+    const data = await _ghFetch(path, 'GET');
+    return data.sha || null;
+  } catch { return null; }
+}
+
+async function _ghPutFile(path, blob, message) {
+  const ab = await blob.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
+  const sha = await _ghGetSHA(path);
+  const body = { message, content: b64, branch: GH_BRANCH };
+  if (sha) body.sha = sha;
+  return _ghFetch(path, 'PUT', body);
+}
+
+async function _ghPutJSON(path, obj, message) {
+  const text = JSON.stringify(obj, null, 2);
+  const b64  = btoa(unescape(encodeURIComponent(text)));
+  const sha  = await _ghGetSHA(path);
+  const body = { message, content: b64, branch: GH_BRANCH };
+  if (sha) body.sha = sha;
+  return _ghFetch(path, 'PUT', body);
+}
+
+async function ghTestConnection() {
+  const token = _ghToken();
+  if (!token) return { ok: false, msg: 'Token vacío' };
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH_REPO}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+    });
+    if (res.status === 200) return { ok: true, msg: 'Conectado correctamente' };
+    if (res.status === 401) return { ok: false, msg: 'Token inválido o expirado' };
+    if (res.status === 404) return { ok: false, msg: 'Repo no encontrado o sin acceso' };
+    return { ok: false, msg: `Error ${res.status}` };
+  } catch(e) {
+    return { ok: false, msg: e.message };
+  }
+}
+
+// ── GitHub config modal ───────────────────────────────────────────────────
+function openGHConfig() {
+  const modal = document.getElementById('gh-config-modal');
+  const input = document.getElementById('gh-token-input');
+  const status = document.getElementById('gh-token-status');
+  input.value = _ghToken() ? '••••••••••••••••••••' : '';
+  status.textContent = _ghToken() ? '✓ Token guardado' : '';
+  status.style.color = 'var(--success)';
+  modal.style.display = 'flex';
+}
+
+function _initGHModal() {
+  const modal  = document.getElementById('gh-config-modal');
+  const input  = document.getElementById('gh-token-input');
+  const status = document.getElementById('gh-token-status');
+
+  document.getElementById('gh-config-cancel').onclick = () => { modal.style.display = 'none'; };
+  document.getElementById('gh-token-save').onclick = () => {
+    const val = input.value.trim();
+    if (!val || val.startsWith('•')) { modal.style.display = 'none'; return; }
+    localStorage.setItem(GH_TOKEN_KEY, val);
+    status.textContent = '✓ Token guardado';
+    status.style.color = 'var(--success)';
+    setTimeout(() => { modal.style.display = 'none'; }, 800);
+  };
+  document.getElementById('gh-token-test').onclick = async () => {
+    const val = input.value.trim();
+    if (val && !val.startsWith('•')) localStorage.setItem(GH_TOKEN_KEY, val);
+    status.textContent = 'Probando…';
+    status.style.color = 'var(--text-muted)';
+    const result = await ghTestConnection();
+    status.textContent = result.ok ? `✓ ${result.msg}` : `✗ ${result.msg}`;
+    status.style.color = result.ok ? 'var(--success)' : 'var(--danger)';
+  };
+}
+
+// Publicar un asset + JSONs a GitHub
+async function _ghPublishAsset(assetId, file, relativeSrc) {
+  if (!_ghToken()) return;   // sin token, skip silencioso
+  try {
+    await _ghPutFile(relativeSrc, file, `assets: add ${relativeSrc}`);
+    await _ghPutJSON('data/asset-registry.json', _registry, 'config: update asset-registry');
+    await _ghPutJSON('data/layer-config.json', { layers: _layers }, 'config: update layer-config');
+    showToast(`✓ Publicado en GitHub\n"${file.name}" disponible para todos en ~1 min`, 'success', 5000);
+  } catch(e) {
+    showToast(`⚠ GitHub: ${e.message}\nEl asset se ve localmente pero no está publicado.`, 'warn', 8000);
+  }
+}
+
 let _layers   = [];
 let _registry = { assets: [] };
 let _activeLayerId = null;
@@ -553,8 +689,15 @@ async function init() {
   document.getElementById('btn-randomize').onclick    = () => { _randomizePreview(); doPreviewRender(); };
   document.getElementById('btn-preview-random').onclick  = () => { _randomizePreview(); doPreviewRender(); };
   document.getElementById('btn-preview-refresh').onclick = doPreviewRender;
-  document.getElementById('btn-export-zip').onclick   = exportZip;
   document.getElementById('btn-batch-upload').onclick = openBatchModal;
+  document.getElementById('btn-gh-config').onclick    = openGHConfig;
+  _initGHModal();
+
+  // Indicar si GitHub está configurado
+  if (_ghToken()) {
+    document.getElementById('btn-gh-config').textContent = '✓ GitHub';
+    document.getElementById('btn-gh-config').style.color = 'var(--success)';
+  }
 }
 
 // ── Persistence ───────────────────────────────────────────────────────────
@@ -848,13 +991,14 @@ async function _handleUpload(layer, files) {
       tags: [],
       colorOverrides: [],
     });
-    copyPaths.push(`assets/${layer.id}/${file.name}`);
-  }
-  if (copyPaths.length) {
+
     _markDirty();
     renderCenter();
     renderLayerList();
-    showToast('Copia los archivos al proyecto:\n' + copyPaths.map(p => '• ' + p).join('\n'), 'info', 8000);
+
+    // Publicar a GitHub en background
+    showToast(`Subiendo "${file.name}" a GitHub…`, 'info', 3000);
+    _ghPublishAsset(assetId, file, relativeSrc);
   }
 }
 
@@ -1321,16 +1465,39 @@ function openBatchModal() {
         tags: [],
         colorOverrides: [],
       });
-      copyPaths.push(item.src);
     });
 
     if (toImport.length) {
       _markDirty();
       renderLayerList();
       if (_activeLayerId) renderCenter();
-      showToast(`${toImport.length} assets importados.\nCopia los archivos:\n` + copyPaths.map(p => '• ' + p).join('\n'), 'info', 10000);
+      close();
+
+      // Publicar a GitHub en background
+      if (_ghToken()) {
+        showToast(`Publicando ${toImport.length} asset(s) en GitHub…`, 'info', 3000);
+        (async () => {
+          let ok = 0, fail = 0;
+          for (const item of toImport) {
+            try {
+              await _ghPutFile(item.src, item.file, `assets: add ${item.src}`);
+              ok++;
+            } catch { fail++; }
+          }
+          // Actualizar JSONs una sola vez al final
+          try {
+            await _ghPutJSON('data/asset-registry.json', _registry, 'config: update asset-registry');
+            await _ghPutJSON('data/layer-config.json', { layers: _layers }, 'config: update layer-config');
+          } catch(e) { fail++; }
+          if (fail === 0) showToast(`✓ ${ok} asset(s) publicados en GitHub\nDisponibles para todos en ~1 min`, 'success', 6000);
+          else showToast(`${ok} publicados, ${fail} fallaron.\nRevisá el token en ⚙ GitHub.`, 'warn', 8000);
+        })();
+      } else {
+        showToast(`${toImport.length} assets importados localmente.\nConfigurá ⚙ GitHub para publicarlos.`, 'info', 6000);
+      }
+    } else {
+      close();
     }
-    close();
   };
 }
 
