@@ -497,6 +497,12 @@
 </head>
 <body>
 
+<div id="admin-test-banner" style="display:none;background:#2a1a6e;border-bottom:1px solid #7C5CFC;padding:7px 20px;font-size:12px;color:#C084FC;display:flex;align-items:center;gap:12px;">
+  <span>⚙ Modo admin — viendo configuración sin publicar</span>
+  <a href="panel-v3.html" style="color:#fff;font-weight:600;margin-left:auto;">← Volver al admin</a>
+  <button id="btn-exit-test" style="background:none;border:1px solid #7C5CFC;border-radius:6px;color:#C084FC;padding:3px 10px;cursor:pointer;font-size:11px;">Salir del modo test</button>
+</div>
+
 <header>
   <h1>AVATAR OS</h1>
   <span class="collection-badge" id="collection-label">Colección 6</span>
@@ -638,9 +644,19 @@ async function init() {
   // Preferir datos del admin (localStorage) sobre los archivos JSON si existen
   const adminLayers   = localStorage.getItem('avatar-os-admin-layers-v3');
   const adminRegistry = localStorage.getItem('avatar-os-admin-registry-v3');
+  const testMode      = localStorage.getItem('avatar-os-admin-test-mode') === '1';
 
   _layers   = (adminLayers   ? JSON.parse(adminLayers)   : layersData).layers.sort((a, b) => a.order - b.order);
   _registry = adminRegistry  ? JSON.parse(adminRegistry) : registryData;
+
+  // Banner modo test
+  if (testMode) {
+    document.getElementById('admin-test-banner').style.display = 'flex';
+    document.getElementById('btn-exit-test').onclick = () => {
+      localStorage.removeItem('avatar-os-admin-test-mode');
+      document.getElementById('admin-test-banner').style.display = 'none';
+    };
+  }
 
   // Selección inicial aleatoria si no hay estado guardado
   if (!Object.keys(State.getSelectedAssets()).length) {
@@ -727,13 +743,24 @@ async function doSync() {
   btn.textContent = '…';
   btn.disabled = true;
   try {
-    const t = Date.now();
-    const [ld, rd] = await Promise.all([
-      fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
-      fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
-    ]);
-    _layers   = ld.layers.sort((a, b) => a.order - b.order);
-    _registry = rd;
+    const testMode    = localStorage.getItem('avatar-os-admin-test-mode') === '1';
+    const adminLayers = localStorage.getItem('avatar-os-admin-layers-v3');
+    const adminReg    = localStorage.getItem('avatar-os-admin-registry-v3');
+
+    if (testMode && adminLayers && adminReg) {
+      // Modo test: leer del admin en localStorage (cambios sin publicar)
+      _layers   = JSON.parse(adminLayers).layers.sort((a, b) => a.order - b.order);
+      _registry = JSON.parse(adminReg);
+    } else {
+      // Modo normal: leer desde GitHub Pages
+      const t = Date.now();
+      const [ld, rd] = await Promise.all([
+        fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
+        fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
+      ]);
+      _layers   = ld.layers.sort((a, b) => a.order - b.order);
+      _registry = rd;
+    }
     Engine.clearCache();
     AssetLoader.clearCache();
     buildLayersUI();

@@ -388,7 +388,7 @@
     <button class="btn btn-accent btn-sm" id="btn-batch-upload">📦 Carga por lote</button>
     <button class="btn btn-ghost btn-sm" id="btn-gh-config" title="Configurar GitHub token">⚙ GitHub</button>
     <button class="btn btn-ghost btn-sm" id="btn-gh-save" title="Publicar configuración actual a GitHub">↑ Guardar</button>
-    <a href="index.html" target="_blank" class="btn btn-ghost btn-sm">← Builder</a>
+    <button class="btn btn-accent btn-sm" id="btn-test-builder">▶ Probar</button>
   </div>
 
   <!-- Modal config GitHub -->
@@ -764,6 +764,7 @@ async function init() {
   document.getElementById('btn-batch-upload').onclick = openBatchModal;
   document.getElementById('btn-gh-config').onclick    = openGHConfig;
   document.getElementById('btn-gh-save').onclick      = ghForceSave;
+  document.getElementById('btn-test-builder').onclick = testInBuilder;
   _initGHModal();
 
   // Indicar si GitHub está configurado
@@ -1659,6 +1660,17 @@ function openBatchModal() {
       close();
     }
   };
+}
+
+// ── Test in builder ───────────────────────────────────────────────────────
+
+function testInBuilder() {
+  // Guardar estado actual en localStorage para que el builder lo lea
+  localStorage.setItem('avatar-os-admin-layers-v3',   JSON.stringify({ layers: _layers }));
+  localStorage.setItem('avatar-os-admin-registry-v3', JSON.stringify(_registry));
+  // Marcar que estamos en modo test para que el builder muestre el banner
+  localStorage.setItem('avatar-os-admin-test-mode', '1');
+  window.open('index.html', 'avatar-os-builder');
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────
