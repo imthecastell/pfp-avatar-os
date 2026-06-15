@@ -387,6 +387,7 @@
     <button class="btn btn-ghost btn-sm" id="btn-randomize">🎲 Aleatorio</button>
     <button class="btn btn-accent btn-sm" id="btn-batch-upload">📦 Carga por lote</button>
     <button class="btn btn-ghost btn-sm" id="btn-gh-config" title="Configurar GitHub token">⚙ GitHub</button>
+    <button class="btn btn-ghost btn-sm" id="btn-gh-save" title="Publicar configuración actual a GitHub">↑ Guardar</button>
     <a href="index.html" target="_blank" class="btn btn-ghost btn-sm">← Builder</a>
   </div>
 
@@ -625,6 +626,26 @@ function _initGHModal() {
   };
 }
 
+// Forzar guardado de JSONs a GitHub
+async function ghForceSave() {
+  if (!_ghToken()) { showToast('Configurá el token en ⚙ GitHub primero', 'warn'); return; }
+  const btn = document.getElementById('btn-gh-save');
+  btn.textContent = '↑ Guardando…';
+  btn.disabled = true;
+  try {
+    await _ghPutJSON('data/asset-registry.json', _registry, 'config: update asset-registry');
+    await _ghPutJSON('data/layer-config.json', { layers: _layers }, 'config: update layer-config');
+    showToast('✓ Guardado en GitHub\nDisponible para todos en ~1 min', 'success', 4000);
+    _isDirty = false;
+    document.getElementById('dirty-indicator').classList.remove('visible');
+  } catch(e) {
+    showToast(`✗ Error al guardar: ${e.message}`, 'error', 6000);
+  } finally {
+    btn.textContent = '↑ Guardar';
+    btn.disabled = false;
+  }
+}
+
 // Publicar un asset + JSONs a GitHub
 async function _ghPublishAsset(assetId, file, relativeSrc) {
   if (!_ghToken()) return;   // sin token, skip silencioso
@@ -692,6 +713,7 @@ async function init() {
   document.getElementById('btn-preview-refresh').onclick = doPreviewRender;
   document.getElementById('btn-batch-upload').onclick = openBatchModal;
   document.getElementById('btn-gh-config').onclick    = openGHConfig;
+  document.getElementById('btn-gh-save').onclick      = ghForceSave;
   _initGHModal();
 
   // Indicar si GitHub está configurado
