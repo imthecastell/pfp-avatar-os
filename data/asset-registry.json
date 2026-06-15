@@ -1,54 +1,6 @@
 {
   "assets": [
     {
-      "id": "emotion-none",
-      "layerId": "emotion",
-      "label": "Ninguna",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "emotion-happy",
-      "layerId": "emotion",
-      "label": "Feliz",
-      "src": "placeholder:emotion",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "emotion-cool",
-      "layerId": "emotion",
-      "label": "Cool",
-      "src": "placeholder:emotion",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "hair-back-none",
-      "layerId": "hair-back",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "hair-back-short",
-      "layerId": "hair-back",
-      "label": "Corto",
-      "src": "placeholder:hair-back",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "hair-back-long",
-      "layerId": "hair-back",
-      "label": "Largo",
-      "src": "placeholder:hair-back",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "head-med-square",
       "layerId": "head",
       "label": "Cuadrada media",
@@ -329,14 +281,6 @@
       "colorOverrides": []
     },
     {
-      "id": "b-hair---plain-rounded",
-      "layerId": "hair-back",
-      "label": "B Hair   Plain Rounded",
-      "src": "assets/hair-back/b hair - plain rounded.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "acc---ducket-hat",
       "layerId": "acc-front",
       "label": "Acc   Ducket Hat",
@@ -389,6 +333,62 @@
       "layerId": "emotion",
       "label": "Em   Sadness",
       "src": "assets/emotion/em - sadness.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---affro",
+      "layerId": "hair-back",
+      "label": "B Hair   Affro",
+      "src": "assets/hair-back/b hair - affro.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---plain-rounded",
+      "layerId": "hair-back",
+      "label": "B Hair   Plain Rounded",
+      "src": "assets/hair-back/b hair - plain rounded.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---tails-affro",
+      "layerId": "hair-back",
+      "label": "B Hair   Tails Affro",
+      "src": "assets/hair-back/b hair - tails affro.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---festival",
+      "layerId": "hair-back",
+      "label": "B Hair   Festival",
+      "src": "assets/hair-back/b hair - festival.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---long-",
+      "layerId": "hair-back",
+      "label": "B Hair   Long ",
+      "src": "assets/hair-back/b hair - long .png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---afro-full",
+      "layerId": "hair-back",
+      "label": "B Hair   Afro Full",
+      "src": "assets/hair-back/b hair - afro full.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---plain-square",
+      "layerId": "hair-back",
+      "label": "B Hair   Plain Square",
+      "src": "assets/hair-back/b hair - plain square.png",
       "tags": [],
       "colorOverrides": []
     }
