@@ -233,6 +233,54 @@
       "colorOverrides": []
     },
     {
+      "id": "bg---structure",
+      "layerId": "background",
+      "label": "Bg   Structure",
+      "src": "assets/background/bg - structure.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---sky",
+      "layerId": "background",
+      "label": "Bg   Sky",
+      "src": "assets/background/bg - sky.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---stairs",
+      "layerId": "background",
+      "label": "Bg   Stairs",
+      "src": "assets/background/bg - stairs.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-dark",
+      "layerId": "background",
+      "label": "Bg   Oleo Dark",
+      "src": "assets/background/bg - oleo dark.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-w1",
+      "layerId": "background",
+      "label": "Bg   Oleo W1",
+      "src": "assets/background/bg - oleo W1.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-mod",
+      "layerId": "background",
+      "label": "Bg   Oleo Mod",
+      "src": "assets/background/bg - oleo Mod.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
       "id": "bg---arch",
       "layerId": "background",
       "label": "Bg   Arch",
@@ -249,22 +297,6 @@
       "colorOverrides": []
     },
     {
-      "id": "bg---oleo-dark",
-      "layerId": "background",
-      "label": "Bg   Oleo Dark",
-      "src": "assets/background/bg - oleo dark.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-mod",
-      "layerId": "background",
-      "label": "Bg   Oleo Mod",
-      "src": "assets/background/bg - oleo Mod.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "bg---oleo-w2",
       "layerId": "background",
       "label": "Bg   Oleo W2",
@@ -273,18 +305,90 @@
       "colorOverrides": []
     },
     {
-      "id": "bg---stairs",
+      "id": "bg---oleo-pot",
       "layerId": "background",
-      "label": "Bg   Stairs",
-      "src": "assets/background/bg - stairs.png",
+      "label": "Bg   Oleo POT",
+      "src": "assets/background/bg - oleo POT.png",
       "tags": [],
       "colorOverrides": []
     },
     {
-      "id": "bg---structure",
+      "id": "bg---desert",
       "layerId": "background",
-      "label": "Bg   Structure",
-      "src": "assets/background/bg - structure.png",
+      "label": "Bg   Desert",
+      "src": "assets/background/bg - desert.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "shirt---base",
+      "layerId": "shirt",
+      "label": "Shirt   Base",
+      "src": "assets/shirt/shirt - base.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "b-hair---plain-rounded",
+      "layerId": "hair-back",
+      "label": "B Hair   Plain Rounded",
+      "src": "assets/hair-back/b hair - plain rounded.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc---ducket-hat",
+      "layerId": "acc-front",
+      "label": "Acc   Ducket Hat",
+      "src": "assets/acc-front/acc - ducket hat.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "em---desire",
+      "layerId": "emotion",
+      "label": "Em   Desire",
+      "src": "assets/emotion/em - desire.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "em---joy",
+      "layerId": "emotion",
+      "label": "Em   Joy",
+      "src": "assets/emotion/em - joy.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "em---anger",
+      "layerId": "emotion",
+      "label": "Em   Anger",
+      "src": "assets/emotion/em - anger.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "em---wonder",
+      "layerId": "emotion",
+      "label": "Em   Wonder",
+      "src": "assets/emotion/em - wonder.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "em---desire_2",
+      "layerId": "emotion",
+      "label": "Em   Desire 2",
+      "src": "assets/emotion/em - desire_2.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "em---sadness",
+      "layerId": "emotion",
+      "label": "Em   Sadness",
+      "src": "assets/emotion/em - sadness.png",
       "tags": [],
       "colorOverrides": []
     }
