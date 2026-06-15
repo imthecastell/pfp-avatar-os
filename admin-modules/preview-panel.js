@@ -26,7 +26,11 @@ const PreviewPanel = (() => {
     _selections = {};
     _layers.forEach(layer => {
       const available = layer.assets.filter(a => a.src !== undefined);
-      if (available.length) _selections[layer.id] = available[Math.floor(Math.random() * available.length)].id;
+      if (available.length) {
+        const picked = available[Math.floor(Math.random() * available.length)];
+        // Engine.render expects filePath (src), not assetId
+        _selections[layer.id] = picked.src || null;
+      }
     });
     render();
   }

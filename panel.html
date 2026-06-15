@@ -507,6 +507,7 @@
   <div class="topbar-sep"></div>
   <span id="save-status"></span>
   <div class="topbar-actions">
+    <button class="btn-sm" id="btn-reset-config" title="Eliminar cambios guardados y recargar desde layer-config.json">↺ Resetear</button>
     <button class="btn-sm" id="btn-export-config">↓ Exportar config</button>
     <label class="btn-sm upload-label">↑ Importar config
       <input type="file" id="import-config-input" accept=".json" style="display:none">
@@ -562,7 +563,7 @@
 <script src="admin-modules/layer-panel.js"></script>
 <script src="admin-modules/asset-panel.js"></script>
 <script src="admin-modules/keyword-panel.js"></script>
-<script src="admin-modules/preview-panel.js"></script>
+<script src="admin-modules/preview-panel.js?v=2"></script>
 
 <script>
 // ── Admin App ─────────────────────────────────────────────────────────────
@@ -577,6 +578,27 @@ const sidebarLeft   = document.getElementById('sidebar-left-content');
 const centerContent = document.getElementById('center-content');
 const previewCanvas = document.getElementById('preview-canvas');
 
+const ADMIN_STORAGE_KEY = 'avatar-os-admin-layers-v1';
+
+function _saveLayers() {
+  try {
+    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(_layers));
+    const el = document.getElementById('save-status');
+    el.textContent = '✓ Guardado';
+    el.className = 'saved';
+  } catch(e) {
+    console.warn('[Admin] No se pudo guardar en localStorage', e);
+  }
+}
+
+function _loadSavedLayers() {
+  try {
+    const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
 // ── Init ──
 async function init() {
   const [layersData, tokensData, kwData] = await Promise.all([
@@ -585,7 +607,9 @@ async function init() {
     fetch('data/keyword-config.json').then(r => r.json()),
   ]);
 
-  _layers = layersData.layers.sort((a,b) => a.order - b.order);
+  // Restore from localStorage if available, otherwise use JSON
+  const saved = _loadSavedLayers();
+  _layers = (saved || layersData.layers).sort((a,b) => a.order - b.order);
   _tokens = tokensData;
   _kwConfig = kwData;
 
@@ -600,6 +624,11 @@ async function init() {
   document.getElementById('btn-test-random').onclick = () => PreviewPanel.randomize();
   document.getElementById('btn-preview-export').onclick = exportPreviewPNG;
   document.getElementById('btn-export-config').onclick = () => AssetManager.exportLayerConfig(_layers);
+  document.getElementById('btn-reset-config').onclick = () => {
+    if (!confirm('¿Resetear configuración? Se perderán los cambios guardados localmente.')) return;
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    location.reload();
+  };
   document.getElementById('import-config-input').onchange = async e => {
     try {
       const data = await AssetManager.importLayerConfig(e.target.files[0]);
@@ -716,7 +745,7 @@ function openLayerEditModal(layer) {
         <label>Color binding (token)</label>
         <select id="lm-binding">
           <option value="">— ninguno —</option>
-          ${Object.keys(_tokens).map(k => `<option value="${k}" ${data.colorBinding===k?'selected':''}>${k}</option>`).join('')}
+          ${(_tokens.tokens||[]).map(t => `<option value="${t.id}" ${data.colorBinding===t.id?'selected':''}>${t.id} — ${t.label}</option>`).join('')}
         </select>
       </div>
       <div class="form-row">
@@ -832,7 +861,9 @@ function renderTokensTab() {
   const list = document.createElement('div');
   list.className = 'token-admin-list';
 
-  Object.entries(_tokens).forEach(([tokenId, def]) => {
+  const tokenList = _tokens.tokens || [];
+  tokenList.forEach(def => {
+    const tokenId = def.id;
     const card = document.createElement('div');
     card.className = 'token-admin-card';
 
@@ -922,6 +953,7 @@ function markDirty() {
   const el = document.getElementById('save-status');
   el.textContent = '● Cambios sin guardar';
   el.className = 'unsaved';
+  _saveLayers();
 }
 
 // ── Export preview ──
