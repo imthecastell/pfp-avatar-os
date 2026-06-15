@@ -4,244 +4,127 @@
       "order": 0,
       "id": "background",
       "label": "Fondo",
-      "type": "background",
+      "type": "image",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": null,
-      "svgTarget": null,
-      "assets": [
-        { "id": "bg-green",  "label": "Verde Bosque", "src": "placeholder:background", "tags": [] },
-        { "id": "bg-blue",   "label": "Azul Océano",  "src": "placeholder:background", "tags": [] },
-        { "id": "bg-sand",   "label": "Arena",         "src": "placeholder:background", "tags": [] },
-        { "id": "bg-teal",   "label": "Teal",          "src": "placeholder:background", "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": false
     },
     {
       "order": 1,
       "id": "emotion",
       "label": "Emoción",
-      "type": "svg",
+      "type": "image",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "assets": [
-        { "id": "emotion-none", "label": "Ninguna",  "src": null,                     "tags": [] },
-        { "id": "emotion-sun",  "label": "Sol",       "src": "placeholder:emotion",    "tags": [] },
-        { "id": "emotion-star", "label": "Estrella",  "src": "placeholder:emotion",    "tags": [] },
-        { "id": "emotion-eye",  "label": "Ojo",       "src": "placeholder:emotion",    "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": true
     },
     {
       "order": 2,
-      "id": "body-base",
-      "label": "Cuerpo",
-      "type": "svg",
-      "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "skin-color",
-      "svgTarget": ".skin-fill",
-      "originalColor": "rgb(249,199,182)",
-      "assets": [
-        { "id": "body-base-default", "label": "Cuerpo Base", "src": "placeholder:body-base", "tags": [] }
-      ]
-    },
-    {
-      "order": 3,
-      "id": "shirt",
-      "label": "Camiseta",
-      "type": "svg",
-      "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "shirt-color",
-      "svgTarget": ".shirt-fill",
-      "assets": [
-        { "id": "shirt-none",   "label": "Ninguna", "src": null,                  "tags": [] },
-        { "id": "shirt-basic",  "label": "Básica",  "src": "placeholder:shirt",   "tags": [] },
-        { "id": "shirt-vneck",  "label": "V-Neck",  "src": "placeholder:shirt",   "tags": [] },
-        { "id": "shirt-stripe", "label": "Rayas",   "src": "placeholder:shirt",   "tags": [] }
-      ]
-    },
-    {
-      "order": 4,
       "id": "hair-back",
       "label": "Cabello (atrás)",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "hair-color",
-      "svgTarget": ".hair-fill",
-      "originalColor": "rgb(0,177,129)",
-      "pairedWith": "hair-front",
-      "assets": [
-        { "id": "hair-none",       "label": "Sin cabello", "src": null,                    "tags": [] },
-        { "id": "hair-short-back", "label": "Corto",       "src": "placeholder:hair-back", "tags": [] },
-        { "id": "hair-long-back",  "label": "Largo",       "src": "placeholder:hair-back", "tags": [], "blocksAccessories": ["hat-snapback","hat-bucket"] },
-        { "id": "hair-afro-back",  "label": "Afro",        "src": "placeholder:hair-back", "tags": [], "blocksAccessories": ["hat-snapback"] }
-      ]
+      "colorToken": "hair-color",
+      "optional": true
+    },
+    {
+      "order": 3,
+      "id": "head",
+      "label": "Cabeza",
+      "type": "svg",
+      "blendMode": "source-over",
+      "colorToken": "skin-color",
+      "optional": false
+    },
+    {
+      "order": 4,
+      "id": "shirt",
+      "label": "Ropa",
+      "type": "svg",
+      "blendMode": "source-over",
+      "colorToken": null,
+      "optional": false
     },
     {
       "order": 5,
-      "id": "head",
-      "label": "Rostro",
+      "id": "acc-back",
+      "label": "Accesorio (atrás)",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "skin-color",
-      "svgTarget": ".skin-fill",
-      "originalColor": "rgb(249,199,182)",
-      "assets": [
-        { "id": "head-default", "label": "Cara Base",    "src": "placeholder:head", "tags": [] },
-        { "id": "head-round",   "label": "Cara Redonda", "src": "placeholder:head", "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": true
     },
     {
       "order": 6,
-      "id": "accessory-back",
-      "label": "Accesorio cabeza (atrás)",
-      "type": "svg",
-      "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "pairedWith": "accessory-front",
-      "assets": [
-        { "id": "acc-back-none",   "label": "Ninguno",  "src": null,                         "tags": [] },
-        { "id": "hat-snapback-back","label": "Snapback", "src": "placeholder:accessory-back", "tags": [] },
-        { "id": "hat-bucket-back", "label": "Bucket Hat","src": "placeholder:accessory-back", "tags": [] },
-        { "id": "hat-wide-back",   "label": "Sombrero", "src": "placeholder:accessory-back",  "tags": [] }
-      ]
-    },
-    {
-      "order": 7,
       "id": "hair-front",
       "label": "Cabello (frente)",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "hair-color",
-      "svgTarget": ".hair-fill",
-      "originalColor": "rgb(0,177,129)",
-      "pairedWith": "hair-back",
-      "assets": [
-        { "id": "hair-none-front",  "label": "Sin cabello", "src": null,                     "tags": [] },
-        { "id": "hair-short-front", "label": "Corto",       "src": "placeholder:hair-front", "tags": [] },
-        { "id": "hair-long-front",  "label": "Largo",       "src": "placeholder:hair-front", "tags": [] },
-        { "id": "hair-afro-front",  "label": "Afro",        "src": "placeholder:hair-front", "tags": [] }
-      ]
+      "colorToken": "hair-color",
+      "optional": true
     },
     {
-      "order": 8,
+      "order": 7,
       "id": "facial-hair",
       "label": "Vello facial",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "hair-color",
-      "svgTarget": ".hair-fill",
-      "originalColor": "rgb(0,177,129)",
-      "optional": true,
-      "assets": [
-        { "id": "fhair-none",  "label": "Ninguno", "src": null,                      "tags": [] },
-        { "id": "fhair-beard", "label": "Barba",   "src": "placeholder:facial-hair", "tags": [] }
-      ]
+      "colorToken": "hair-color",
+      "optional": true
     },
     {
-      "order": 9,
+      "order": 8,
       "id": "mask",
       "label": "Máscara",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": "mask-color",
-      "svgTarget": ".mask-fill",
-      "optional": true,
-      "assets": [
-        { "id": "mask-none", "label": "Sin máscara",  "src": null,               "tags": [] },
-        { "id": "mask-half", "label": "Media cara",   "src": "placeholder:mask", "tags": [] },
-        { "id": "mask-full", "label": "Cara completa","src": "placeholder:mask", "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": true
+    },
+    {
+      "order": 9,
+      "id": "acc-front",
+      "label": "Accesorio (frente)",
+      "type": "svg",
+      "blendMode": "source-over",
+      "colorToken": null,
+      "optional": true
     },
     {
       "order": 10,
-      "id": "accessory-front",
-      "label": "Accesorio cabeza (frente)",
+      "id": "acc-face",
+      "label": "Accesorio facial",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "pairedWith": "accessory-back",
-      "assets": [
-        { "id": "acc-front-none",    "label": "Ninguno",  "src": null,                          "tags": [] },
-        { "id": "hat-snapback-front","label": "Snapback", "src": "placeholder:accessory-front",  "tags": [] },
-        { "id": "hat-bucket-front",  "label": "Bucket Hat","src": "placeholder:accessory-front", "tags": [] },
-        { "id": "hat-wide-front",    "label": "Sombrero", "src": "placeholder:accessory-front",  "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": true
     },
     {
       "order": 11,
-      "id": "accessory-face",
-      "label": "Lentes",
+      "id": "effect-front",
+      "label": "Efecto (frente)",
       "type": "svg",
       "blendMode": "source-over",
-      "locked": false,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "assets": [
-        { "id": "glasses-none",   "label": "Sin lentes", "src": null,                         "tags": [] },
-        { "id": "glasses-round",  "label": "Redondos",   "src": "placeholder:accessory-face",  "tags": [] },
-        { "id": "glasses-square", "label": "Cuadrados",  "src": "placeholder:accessory-face",  "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": true
     },
     {
       "order": 12,
-      "id": "effect-front",
-      "label": "Efecto frontal",
-      "type": "png",
-      "blendMode": "source-over",
-      "locked": true,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "assets": [
-        { "id": "effect-none", "label": "Ninguno", "src": null, "tags": [] },
-        { "id": "effect-glow", "label": "Glow",    "src": null, "tags": [] }
-      ]
+      "id": "effect-final",
+      "label": "Efecto final",
+      "type": "svg",
+      "blendMode": "soft-light",
+      "colorToken": null,
+      "optional": true
     },
     {
       "order": 13,
-      "id": "effect-final",
-      "label": "Efecto final (firma)",
-      "type": "png",
-      "blendMode": "overlay",
-      "locked": true,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "assets": [
-        { "id": "effect-sig-none", "label": "Ninguno",     "src": null, "tags": [] },
-        { "id": "effect-sig-col6", "label": "Firma Col-6", "src": null, "tags": [] }
-      ]
-    },
-    {
-      "order": 14,
       "id": "frame",
       "label": "Marco",
-      "type": "png",
+      "type": "svg",
       "blendMode": "source-over",
-      "locked": true,
-      "colorBinding": null,
-      "svgTarget": null,
-      "optional": true,
-      "assets": [
-        { "id": "frame-none",  "label": "Sin marco", "src": null,                "tags": [] },
-        { "id": "frame-col6",  "label": "Marco Col-6","src": "placeholder:frame", "tags": [] }
-      ]
+      "colorToken": null,
+      "optional": true
     }
   ]
 }

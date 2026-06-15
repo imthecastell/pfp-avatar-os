@@ -1,151 +1,145 @@
 /**
- * SVGProcessor — puente entre Affinity Designer iPad y el engine.
- * Affinity exporta grupos con id="skin-fill"; este módulo propaga
- * esas clases a los hijos para que ColorEngine pueda seleccionarlos.
+ * SVGProcessor — normaliza SVGs de Affinity Designer y gestiona recoloreo.
+ * Affinity exporta colores como fill:rgb(r,g,b) inline → string replace directo.
+ * Los contornos negros (stroke/fill < 40,40,40) NUNCA se modifican.
  */
+const SVGProcessor = (() => {
 
-const SVGProcessor = {
+  const CANVAS_SIZE = 5936; // viewBox canónico de Affinity iPad
 
-  COLORABLE_CLASSES: ['skin-fill', 'hair-fill', 'shirt-fill', 'acc-fill', 'mask-fill'],
-  FIXED_CLASSES:     ['outline', 'shadow', 'blush', 'detail', 'whites', 'texture', 'crack'],
+  function _isOutline(r, g, b) {
+    return r < 40 && g < 40 && b < 40;
+  }
 
-  process(svgContent) {
-    const doc = this.parse(svgContent);
-    this.convertGroupIdsToClasses(doc);
-    this.ensureViewBox(doc);
-    this.cleanInlineStyles(doc);
-    return this.serialize(doc);
-  },
-
-  parse(svgContent) {
-    return new DOMParser().parseFromString(svgContent, 'image/svg+xml');
-  },
-
-  serialize(doc) {
-    return new XMLSerializer().serializeToString(doc.documentElement || doc);
-  },
-
-  // <g id="skin-fill"> → clase propagada a todos los shapes hijos
-  convertGroupIdsToClasses(doc) {
-    const ALL = [...this.COLORABLE_CLASSES, ...this.FIXED_CLASSES];
-    doc.querySelectorAll('g[id]').forEach(group => {
-      const id = group.getAttribute('id');
-      if (!ALL.includes(id)) return;
-      group.setAttribute('class', (group.getAttribute('class') || '') + ' ' + id);
-      group.querySelectorAll('path, circle, rect, ellipse, polygon, polyline, line')
-           .forEach(el => el.classList.add(id));
-    });
-  },
-
-  ensureViewBox(doc) {
-    const svg = doc.querySelector('svg');
-    if (!svg) return;
-    const vb = svg.getAttribute('viewBox');
-    if (vb !== '0 0 1000 1000') {
-      console.warn(`[SVGProcessor] viewBox incorrecto: "${vb}" — corrigiendo a 1000×1000`);
-      svg.setAttribute('viewBox', '0 0 1000 1000');
-      svg.setAttribute('width',   '1000');
-      svg.setAttribute('height',  '1000');
+  /**
+   * Detecta colores únicos editables en un SVG string.
+   * Excluye negros (contornos).
+   * @returns [{ original: 'rgb(249,199,182)', count: 7 }]
+   */
+  function detectEditableColors(svgString) {
+    const re = /rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g;
+    const map = new Map();
+    let m;
+    while ((m = re.exec(svgString)) !== null) {
+      const [, r, g, b] = m;
+      if (_isOutline(+r, +g, +b)) continue;
+      const key = `rgb(${r},${g},${b})`;
+      map.set(key, (map.get(key) || 0) + 1);
     }
-  },
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([original, count]) => ({ original, count }));
+  }
 
-  // Elimina fill inline de elementos coloreables (para que los atributos dominen)
-  cleanInlineStyles(doc) {
-    const sel = this.COLORABLE_CLASSES.map(c => `.${c}`).join(', ');
-    doc.querySelectorAll(sel).forEach(el => {
-      const style = el.getAttribute('style') || '';
-      if (!style.includes('fill:')) return;
-      const fillMatch = style.match(/fill:\s*([^;]+)/);
-      if (fillMatch && !el.getAttribute('fill')) {
-        el.setAttribute('fill', fillMatch[1].trim());
-      }
-      el.setAttribute('style', style.replace(/fill:[^;]+;?/g, '').trim());
-    });
-  },
+  /**
+   * Reemplaza un color rgb() por otro hex en el SVG string.
+   * fromColor: 'rgb(249,199,182)'  toHex: '#D4956A'
+   * Los contornos negros NUNCA se tocan.
+   */
+  function recolorSVG(svgString, fromColor, toHex) {
+    if (!fromColor || !toHex || !svgString) return svgString;
+    const toRgb = _hexToRgb(toHex);
+    if (!toRgb) return svgString;
+    let result = svgString.replaceAll(fromColor, toRgb);
+    // Variante compacta (sin espacios después de comas)
+    const compact = fromColor.replace(/,\s+/g, ',');
+    if (compact !== fromColor) result = result.replaceAll(compact, toRgb);
+    return result;
+  }
 
-  // Valida un SVG antes de guardarlo en el admin
-  validate(svgContent) {
-    const errors   = [];
-    const warnings = [];
-    let doc;
-    try {
-      doc = this.parse(svgContent);
-    } catch(e) {
-      return { valid: false, errors: ['No se pudo parsear el SVG'], warnings };
+  /**
+   * Aplica todos los colorOverrides de una variante al SVG.
+   * variantAsset: { colorOverrides: [{ original, replacement }] }
+   */
+  function applyVariant(svgString, variantAsset) {
+    let result = svgString;
+    for (const { original, replacement } of (variantAsset.colorOverrides || [])) {
+      result = recolorSVG(result, original, replacement);
     }
+    return result;
+  }
 
-    const svg = doc.querySelector('svg');
-    if (!svg) return { valid: false, errors: ['No es un SVG válido'], warnings };
+  /**
+   * Aplica un token de color (reemplaza originalColor por tokenHex).
+   */
+  function applyToken(svgString, originalColor, tokenHex) {
+    return recolorSVG(svgString, originalColor, tokenHex);
+  }
 
-    const vb = svg.getAttribute('viewBox');
-    if (vb !== '0 0 1000 1000') {
-      errors.push(`viewBox debe ser "0 0 1000 1000", encontrado: "${vb}"`);
-    }
-
-    const colorableSel = [...this.COLORABLE_CLASSES, ...this.COLORABLE_CLASSES.map(c => `[id="${c}"]`)].join(', ');
-    const hasColorable = doc.querySelector(colorableSel);
-    const hasOutline   = doc.querySelector('.outline, [id="outline"]');
-
-    if (!hasOutline)   warnings.push('No se encontró capa "outline" — contornos no separados');
-    if (!hasColorable) warnings.push('No se encontró zona coloreable — no responderá a tokens de color');
-
-    return { valid: errors.length === 0, errors, warnings };
-  },
-
-  // Genera SVG placeholder con viewBox correcto y zona visual marcada
-  placeholder(layerId) {
-    const COLORS = {
-      'body-base':       '#F5C5A3',
-      'head':            '#F5C5A3',
-      'shirt':           '#4A90D9',
-      'hair-back':       '#5C8A3C',
-      'hair-front':      '#5C8A3C',
-      'facial-hair':     '#5C8A3C',
-      'emotion':         '#F39C12',
-      'mask':            '#7F8C8D',
-      'accessory-back':  '#2C2C2C',
-      'accessory-front': '#2C2C2C',
-      'accessory-face':  '#1A1A2E',
-      'background':      '#1A6B6B',
-      'frame':           '#D4AF37',
-    };
+  /**
+   * Genera un SVG placeholder para desarrollo (viewBox 5936×5936).
+   * Respeta los colores originales de Affinity para que el recoloreo funcione.
+   */
+  function generatePlaceholder(layerId) {
     const ZONES = {
-      'emotion':         { x: 80,  y: 60,  w: 200, h: 200 },
-      'body-base':       { x: 150, y: 520, w: 700, h: 430 },
-      'head':            { x: 280, y: 280, w: 440, h: 300 },
-      'shirt':           { x: 170, y: 550, w: 660, h: 380 },
-      'hair-back':       { x: 260, y: 190, w: 480, h: 230 },
-      'hair-front':      { x: 270, y: 190, w: 460, h: 200 },
-      'facial-hair':     { x: 340, y: 460, w: 320, h: 120 },
-      'mask':            { x: 480, y: 300, w: 300, h: 280 },
-      'accessory-back':  { x: 250, y: 220, w: 500, h: 200 },
-      'accessory-front': { x: 200, y: 330, w: 580, h: 100 },
-      'accessory-face':  { x: 320, y: 360, w: 360, h: 100 },
-      'background':      { x: 0,   y: 0,   w: 1000,h: 1000 },
-      'frame':           { x: 0,   y: 0,   w: 1000,h: 1000 },
+      'background':   { x:0,    y:0,    w:5936, h:5936, full:true  },
+      'emotion':      { x:200,  y:200,  w:1200, h:1200             },
+      'hair-back':    { x:1600, y:800,  w:2700, h:1500             },
+      'head':         { x:1500, y:1200, w:2900, h:2200             },
+      'shirt':        { x:1000, y:2800, w:3900, h:2500             },
+      'acc-back':     { x:1500, y:900,  w:2900, h:1200             },
+      'hair-front':   { x:1700, y:900,  w:2500, h:1400             },
+      'facial-hair':  { x:2300, y:2600, w:1300, h:700              },
+      'mask':         { x:2600, y:1400, w:1800, h:1800             },
+      'acc-front':    { x:1500, y:900,  w:2900, h:1200             },
+      'acc-face':     { x:2100, y:1900, w:1700, h:600              },
+      'effect-front': { x:0,    y:0,    w:5936, h:5936, full:true  },
+      'effect-final': { x:0,    y:0,    w:5936, h:5936, full:true  },
+      'frame':        { x:0,    y:0,    w:5936, h:5936, full:true  },
     };
-    const CLASS_MAP = {
-      'body-base': 'skin-fill', 'head': 'skin-fill',
-      'shirt': 'shirt-fill',
-      'hair-back': 'hair-fill', 'hair-front': 'hair-fill', 'facial-hair': 'hair-fill',
+    // Colores que coinciden con los originales de Affinity para que el recoloreo funcione
+    const COLORS = {
+      'background':   '#1A6B6B',
+      'emotion':      '#D4AA1A',
+      'hair-back':    'rgb(0,177,129)',
+      'head':         'rgb(249,199,182)',
+      'shirt':        'rgb(230,220,202)',
+      'acc-back':     '#2C2C2C',
+      'hair-front':   'rgb(0,177,129)',
+      'facial-hair':  'rgb(0,177,129)',
+      'mask':         '#969696',
+      'acc-front':    '#3C3C3C',
+      'acc-face':     '#1A1A2E',
+      'effect-front': 'rgba(255,255,255,0.05)',
+      'effect-final': 'rgba(200,180,255,0.2)',
+      'frame':        '#D4AF37',
     };
 
-    const z   = ZONES[layerId]    || { x: 100, y: 100, w: 800, h: 800 };
-    const col = COLORS[layerId]   || '#AAAAAA';
-    const cls = CLASS_MAP[layerId]|| 'acc-fill';
-    const isFullCanvas = (z.w === 1000 && z.h === 1000);
+    const z   = ZONES[layerId] || { x:500, y:500, w:4936, h:4936 };
+    const col = COLORS[layerId] || '#888888';
 
-    return `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-  <rect class="${cls}" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}"
-        fill="${col}" rx="${isFullCanvas ? 0 : 20}" opacity="${isFullCanvas ? 0.7 : 1}"/>
-  ${!isFullCanvas ? `<rect class="outline"
-        x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}"
-        fill="none" stroke="#1a1a1a" stroke-width="8" rx="20"/>
-  <text x="${z.x + z.w/2}" y="${z.y + z.h/2}"
-        text-anchor="middle" dominant-baseline="middle"
-        fill="#1a1a1a" font-size="28" font-family="sans-serif">${layerId}</text>` : ''}
+    return `<svg viewBox="0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}" xmlns="http://www.w3.org/2000/svg" width="${CANVAS_SIZE}" height="${CANVAS_SIZE}">
+  <rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}"
+        fill="${col}" rx="${z.full ? 0 : 80}" opacity="${z.full ? 0.5 : 1}"/>
+  ${!z.full ? `<text x="${z.x + z.w/2}" y="${z.y + z.h/2}" text-anchor="middle"
+        dominant-baseline="middle" fill="rgba(0,0,0,0.3)"
+        font-size="200" font-family="sans-serif">${layerId}</text>` : ''}
 </svg>`;
   }
-};
+
+  function _hexToRgb(hex) {
+    if (!hex) return null;
+    if (hex[0] !== '#') return hex; // ya es rgb()
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function _rgbToHex(rgb) {
+    const m = rgb.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+    if (!m) return null;
+    return '#' + [m[1],m[2],m[3]].map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
+  }
+
+  return {
+    detectEditableColors,
+    recolorSVG,
+    applyVariant,
+    applyToken,
+    generatePlaceholder,
+    CANVAS_SIZE,
+  };
+})();
 
 if (typeof module !== 'undefined') module.exports = SVGProcessor;
