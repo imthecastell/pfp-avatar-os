@@ -974,12 +974,21 @@ function _randomizePreview() {
 
 async function doPreviewRender() {
   const visibleLayers = _layers.filter(l => _layerVis[l.id] !== false);
+
+  // Enriquecer registry con blob URLs de sesión para assets recién subidos
+  const enrichedRegistry = {
+    assets: _registry.assets.map(a => {
+      if (!_sessionBlobs.has(a.id)) return a;
+      return { ...a, src: _sessionBlobs.get(a.id), _srcHint: a.src };
+    }),
+  };
+
   const fakeState = {
     getTokens: () => ({ 'skin-color': '#F9C7B6', 'hair-color': '#00B181' }),
     getSelectedAssets: () => ({ ..._previewSel }),
   };
   try {
-    await Engine.render(previewCanvas, visibleLayers, _registry, fakeState);
+    await Engine.render(previewCanvas, visibleLayers, enrichedRegistry, fakeState);
   } catch(e) {
     console.error('Preview render error', e);
   }

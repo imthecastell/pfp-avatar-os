@@ -35,9 +35,11 @@ const Engine = (() => {
     if (_cache.has(cacheKey)) return _cache.get(cacheKey);
 
     const src = asset.src || `placeholder:${layer.id}`;
+    // _srcHint: nombre original del archivo cuando src es un blob URL temporal
+    const srcForTypeCheck = asset._srcHint || src;
     let img;
 
-    if (_isBitmap(src)) {
+    if (_isBitmap(srcForTypeCheck)) {
       // PNG/JPG — cargar como imagen directamente, sin procesar como SVG
       try {
         img = await _loadBitmapImage(src);

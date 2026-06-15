@@ -633,8 +633,12 @@ async function init() {
     fetch('data/asset-registry.json').then(r => r.json()),
   ]);
 
-  _layers   = layersData.layers.sort((a, b) => a.order - b.order);
-  _registry = registryData;
+  // Preferir datos del admin (localStorage) sobre los archivos JSON si existen
+  const adminLayers   = localStorage.getItem('avatar-os-admin-layers-v3');
+  const adminRegistry = localStorage.getItem('avatar-os-admin-registry-v3');
+
+  _layers   = (adminLayers   ? JSON.parse(adminLayers)   : layersData).layers.sort((a, b) => a.order - b.order);
+  _registry = adminRegistry  ? JSON.parse(adminRegistry) : registryData;
 
   // Selección inicial aleatoria si no hay estado guardado
   if (!Object.keys(State.getSelectedAssets()).length) {
