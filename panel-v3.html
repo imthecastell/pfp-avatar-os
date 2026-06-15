@@ -1030,19 +1030,23 @@ function _makeAssetCard(layer, asset) {
 async function _renderThumb(thumbCanvas, layer, asset) {
   const SIZE = 120;
   const sessionSrc = _sessionBlobs.get(asset.id);
-  const isBitmap = /\.(png|jpg|jpeg|webp)$/i.test(asset.src || '');
+  const isBitmap = /\.(png|jpg|jpeg|webp)$/i.test(
+    (asset._srcHint || asset.src || '').split('?')[0]
+  );
+  const bitmapSrc = sessionSrc || (isBitmap ? asset.src : null);
 
   thumbCanvas.width = thumbCanvas.height = SIZE;
   const ctx = thumbCanvas.getContext('2d');
 
   try {
-    if (sessionSrc && isBitmap) {
-      // PNG/JPG subido en sesión — cargar imagen directamente sin engine
+    if (bitmapSrc) {
+      // PNG/JPG — cargar directamente como <img>, sin engine ni canvas 2048px
       const img = await new Promise((res, rej) => {
         const i = new Image();
+        i.crossOrigin = 'anonymous';
         i.onload = () => res(i);
         i.onerror = rej;
-        i.src = sessionSrc;
+        i.src = bitmapSrc;
       });
       ctx.drawImage(img, 0, 0, SIZE, SIZE);
     } else {
