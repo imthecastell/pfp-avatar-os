@@ -1,22 +1,6 @@
 {
   "assets": [
     {
-      "id": "head-med-square",
-      "layerId": "head",
-      "label": "Cuadrada media",
-      "src": "placeholder:head",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "head-round",
-      "layerId": "head",
-      "label": "Redonda",
-      "src": "placeholder:head",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "shirt-basic",
       "layerId": "shirt",
       "label": "Básica",
@@ -389,6 +373,54 @@
       "layerId": "hair-back",
       "label": "B Hair   Plain Square",
       "src": "assets/hair-back/b hair - plain square.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head---slim-rounded",
+      "layerId": "head",
+      "label": "Head   Slim Rounded",
+      "src": "assets/head/head - slim rounded.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head---med-rounded",
+      "layerId": "head",
+      "label": "Head   Med Rounded",
+      "src": "assets/head/head - med rounded.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head---slim-squared",
+      "layerId": "head",
+      "label": "Head   Slim Squared",
+      "src": "assets/head/head - slim squared.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head---wide-squared",
+      "layerId": "head",
+      "label": "Head   Wide Squared",
+      "src": "assets/head/head - wide squared.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head---med-square",
+      "layerId": "head",
+      "label": "Head   Med Square",
+      "src": "assets/head/head - med square.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "head---wide-rounded",
+      "layerId": "head",
+      "label": "Head   Wide Rounded",
+      "src": "assets/head/head - wide rounded.png",
       "tags": [],
       "colorOverrides": []
     }
