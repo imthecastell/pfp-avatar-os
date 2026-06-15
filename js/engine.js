@@ -15,41 +15,65 @@ const Engine = (() => {
     'hair-color': 'rgb(0,177,129)',
   };
 
+  function _isBitmap(src) {
+    if (!src) return false;
+    const lower = src.split('?')[0].toLowerCase();
+    return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.webp');
+  }
+
+  async function _loadBitmapImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
   async function _loadLayerImage(asset, layer, tokens) {
     const cacheKey = asset.id + JSON.stringify(tokens);
     if (_cache.has(cacheKey)) return _cache.get(cacheKey);
 
     const src = asset.src || `placeholder:${layer.id}`;
-    let svgText;
+    let img;
 
-    try {
-      svgText = await AssetLoader.loadSVGText(src);
-    } catch (e) {
-      svgText = SVGProcessor.generatePlaceholder(layer.id);
-    }
-
-    // Apply variant colorOverrides
-    if (asset.colorOverrides && asset.colorOverrides.length) {
-      svgText = SVGProcessor.applyVariant(svgText, asset);
-    }
-
-    // Apply color token
-    if (layer.colorToken && tokens[layer.colorToken]) {
-      const originalColor = TOKEN_ORIGINALS[layer.colorToken];
-      if (originalColor) {
-        svgText = SVGProcessor.applyToken(svgText, originalColor, tokens[layer.colorToken]);
+    if (_isBitmap(src)) {
+      // PNG/JPG — cargar como imagen directamente, sin procesar como SVG
+      try {
+        img = await _loadBitmapImage(src);
+      } catch(e) {
+        // Fallback: placeholder SVG
+        const svgText = SVGProcessor.generatePlaceholder(layer.id);
+        img = await AssetLoader.svgToImage(svgText);
       }
+    } else {
+      // SVG o placeholder — pipeline normal
+      let svgText;
+      try {
+        svgText = await AssetLoader.loadSVGText(src);
+      } catch (e) {
+        svgText = SVGProcessor.generatePlaceholder(layer.id);
+      }
+
+      if (asset.colorOverrides && asset.colorOverrides.length) {
+        svgText = SVGProcessor.applyVariant(svgText, asset);
+      }
+      if (layer.colorToken && tokens[layer.colorToken]) {
+        const originalColor = TOKEN_ORIGINALS[layer.colorToken];
+        if (originalColor) {
+          svgText = SVGProcessor.applyToken(svgText, originalColor, tokens[layer.colorToken]);
+        }
+      }
+      img = await AssetLoader.svgToImage(svgText);
     }
 
-    const img = await AssetLoader.svgToImage(svgText);
-
-    // Scale to CANVAS_SIZE via OffscreenCanvas if needed
+    // Escalar a CANVAS_SIZE via OffscreenCanvas si es necesario
     let result = img;
-    if (img.naturalWidth !== CANVAS_SIZE || img.naturalHeight !== CANVAS_SIZE) {
+    if ((img.naturalWidth || img.width) !== CANVAS_SIZE || (img.naturalHeight || img.height) !== CANVAS_SIZE) {
       try {
         const oc = new OffscreenCanvas(CANVAS_SIZE, CANVAS_SIZE);
-        const ctx = oc.getContext('2d');
-        ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        const oc_ctx = oc.getContext('2d');
+        oc_ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
         result = await createImageBitmap(oc);
       } catch (e) {
         result = img;

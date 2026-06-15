@@ -443,6 +443,8 @@ const REGISTRY_KEY = 'avatar-os-admin-registry-v3';
 let _layers   = [];
 let _registry = { assets: [] };
 let _activeLayerId = null;
+// dataURLs de archivos subidos en esta sesión (no se persisten)
+const _sessionBlobs = new Map();  // assetId → objectURL
 let _isDirty  = false;
 
 // Preview state (lightweight, not persisted)
@@ -679,21 +681,35 @@ function _makeAssetCard(layer, asset) {
 
 async function _renderThumb(thumbCanvas, layer, asset) {
   const SIZE = 120;
-  // Render en canvas temporal (Engine lo pone a 2048×2048) y luego copiar al thumb
-  const tmp = document.createElement('canvas');
-  const fakeRegistry = { assets: [asset] };
-  const fakeState = {
-    getTokens: () => ({ 'skin-color': '#F9C7B6', 'hair-color': '#00B181' }),
-    getSelectedAssets: () => ({ [layer.id]: asset.id }),
-  };
+  const sessionSrc = _sessionBlobs.get(asset.id);
+  const isBitmap = /\.(png|jpg|jpeg|webp)$/i.test(asset.src || '');
+
+  thumbCanvas.width = thumbCanvas.height = SIZE;
+  const ctx = thumbCanvas.getContext('2d');
+
   try {
-    await Engine.render(tmp, [layer], fakeRegistry, fakeState);
-    thumbCanvas.width = thumbCanvas.height = SIZE;
-    const ctx = thumbCanvas.getContext('2d');
-    ctx.drawImage(tmp, 0, 0, SIZE, SIZE);
+    if (sessionSrc && isBitmap) {
+      // PNG/JPG subido en sesión — cargar imagen directamente sin engine
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = rej;
+        i.src = sessionSrc;
+      });
+      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+    } else {
+      // SVG o placeholder — usar engine en canvas temporal
+      const tmp = document.createElement('canvas');
+      const effectiveAsset = sessionSrc ? { ...asset, src: sessionSrc } : asset;
+      const fakeRegistry = { assets: [effectiveAsset] };
+      const fakeState = {
+        getTokens: () => ({ 'skin-color': '#F9C7B6', 'hair-color': '#00B181' }),
+        getSelectedAssets: () => ({ [layer.id]: effectiveAsset.id }),
+      };
+      await Engine.render(tmp, [layer], fakeRegistry, fakeState);
+      ctx.drawImage(tmp, 0, 0, SIZE, SIZE);
+    }
   } catch(e) {
-    thumbCanvas.width = thumbCanvas.height = SIZE;
-    const ctx = thumbCanvas.getContext('2d');
     ctx.fillStyle = '#1E1E2A';
     ctx.fillRect(0, 0, SIZE, SIZE);
     ctx.fillStyle = '#555';
@@ -713,8 +729,11 @@ async function _handleUpload(layer, files) {
     const assetId = `${slug}-${Date.now()}`;
     const relativeSrc = `assets/${layer.id}/${file.name}`;
 
-    const existing = _registry.assets.find(a => a.id === assetId || a.src === relativeSrc);
+    const existing = _registry.assets.find(a => a.src === relativeSrc);
     if (existing) continue;
+
+    // Guardar blob URL en sesión para preview inmediato
+    _sessionBlobs.set(assetId, URL.createObjectURL(file));
 
     _registry.assets.push({
       id: assetId,
@@ -1169,6 +1188,9 @@ function openBatchModal() {
     const copyPaths = [];
 
     toImport.forEach(item => {
+      // Blob URL para preview inmediato en esta sesión
+      _sessionBlobs.set(item.assetId, URL.createObjectURL(item.file));
+
       _registry.assets.push({
         id: item.assetId,
         layerId: item.layerId,
