@@ -1,22 +1,6 @@
 {
   "assets": [
     {
-      "id": "acc-back-none",
-      "layerId": "acc-back",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "acc-back-cap",
-      "layerId": "acc-back",
-      "label": "Gorra",
-      "src": "placeholder:acc-back",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "hair-front-none",
       "layerId": "hair-front",
       "label": "Ninguno",
@@ -409,14 +393,6 @@
       "colorOverrides": []
     },
     {
-      "id": "shirt---base",
-      "layerId": "shirt",
-      "label": "Shirt   Base",
-      "src": "assets/shirt/shirt - base.svg",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "jacket-open",
       "layerId": "shirt",
       "label": "Jacket Open",
@@ -437,6 +413,14 @@
       "layerId": "shirt",
       "label": "Jacket A",
       "src": "assets/shirt/jacket a.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "shirt---base-1781533004062",
+      "layerId": "shirt",
+      "label": "shirt - base",
+      "src": "assets/shirt/shirt - base.svg",
       "tags": [],
       "colorOverrides": []
     }
