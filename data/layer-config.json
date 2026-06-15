@@ -46,15 +46,6 @@
       "optional": false
     },
     {
-      "order": 5,
-      "id": "acc-back",
-      "label": "Accesorio (atrás)",
-      "type": "svg",
-      "blendMode": "source-over",
-      "colorToken": null,
-      "optional": true
-    },
-    {
       "order": 6,
       "id": "hair-front",
       "label": "Cabello (frente)",
