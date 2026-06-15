@@ -7,6 +7,8 @@ const AssetPanel = (() => {
   let _layer = null;
   let _onEvent = null;
   let _container = null;
+  // In-memory preview URLs for this session only (not persisted)
+  const _sessionPreviews = new Map();
 
   function init(containerEl, onEvent) {
     _container = containerEl;
@@ -71,12 +73,14 @@ const AssetPanel = (() => {
 
     const preview = document.createElement('div');
     preview.className = 'asset-card-preview';
-    if (asset.src && asset.src.startsWith('placeholder:')) {
+    // Use in-session dataURL if available, otherwise use src path
+    const displaySrc = _sessionPreviews.get(asset.id) || asset.src;
+    if (displaySrc && displaySrc.startsWith('placeholder:')) {
       preview.style.background = '#2A2A3A';
-      preview.innerHTML = `<span style="font-size:11px;color:#888">${asset.src.replace('placeholder:','')}</span>`;
-    } else if (asset.src) {
+      preview.innerHTML = `<span style="font-size:11px;color:#888">${displaySrc.replace('placeholder:','')}</span>`;
+    } else if (displaySrc && (displaySrc.startsWith('data:') || displaySrc.startsWith('assets/') || displaySrc.startsWith('http'))) {
       const img = document.createElement('img');
-      img.src = asset.src;
+      img.src = displaySrc;
       img.style.cssText = 'width:100%;height:100%;object-fit:contain';
       preview.appendChild(img);
     } else {
@@ -123,6 +127,8 @@ const AssetPanel = (() => {
   }
 
   async function _handleUpload(files) {
+    const copyQueue = [];
+
     for (const file of files) {
       const isSVG = file.name.endsWith('.svg');
 
@@ -134,15 +140,27 @@ const AssetPanel = (() => {
         }
       }
 
-      const dataUrl = await AssetManager.fileToDataURL(file);
-      const id = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
+      const slug = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
       const label = file.name.replace(/\.[^.]+$/, '');
+      const assetId = `${slug}-${Date.now()}`;
+      // Store as relative path (lightweight, persists in localStorage)
+      const relativeSrc = `assets/${_layer.id}/${file.name}`;
 
-      const newAsset = { id: `upload-${id}-${Date.now()}`, label, src: dataUrl, tags: [] };
+      // Keep dataURL only in memory for preview this session
+      const dataUrl = await AssetManager.fileToDataURL(file);
+      _sessionPreviews.set(assetId, dataUrl);
+
+      const newAsset = { id: assetId, label, src: relativeSrc, tags: [] };
       _layer.assets.push(newAsset);
       _emit('asset-add', { layer: _layer, asset: newAsset });
-      _render();
+      copyQueue.push({ file: file.name, dest: `assets/${_layer.id}/` });
     }
+
+    if (copyQueue.length) {
+      const paths = copyQueue.map(c => `• ${c.dest}${c.file}`).join('\n');
+      _showInfo(`Copia los archivos al proyecto:\n${paths}`);
+    }
+    _render();
   }
 
   function _showError(msg) {
@@ -151,6 +169,15 @@ const AssetPanel = (() => {
     err.textContent = msg;
     document.body.appendChild(err);
     setTimeout(() => err.remove(), 4000);
+  }
+
+  function _showInfo(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast toast-success';
+    t.style.cssText = 'white-space:pre;max-width:400px;font-size:11px;line-height:1.6';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 7000);
   }
 
   function _emit(type, data) {

@@ -487,10 +487,24 @@
       font-size: 11px;
       padding: 4px 10px;
       border-radius: 4px;
-      transition: opacity .3s;
+      transition: all .3s;
     }
     #save-status.saved   { color: var(--success); }
-    #save-status.unsaved { color: var(--warn); }
+    #save-status.unsaved { color: var(--warn); font-weight: 700; }
+    #btn-save-manual {
+      display: none;
+      padding: 6px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--success);
+      background: rgba(74,222,128,.15);
+      color: var(--success);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: background .15s;
+    }
+    #btn-save-manual:hover { background: rgba(74,222,128,.3); }
+    #btn-save-manual.visible { display: block; }
   </style>
 </head>
 <body>
@@ -506,6 +520,7 @@
   </div>
   <div class="topbar-sep"></div>
   <span id="save-status"></span>
+  <button id="btn-save-manual">💾 Guardar cambios</button>
   <div class="topbar-actions">
     <button class="btn-sm" id="btn-reset-config" title="Eliminar cambios guardados y recargar desde layer-config.json">↺ Resetear</button>
     <button class="btn-sm" id="btn-export-config">↓ Exportar config</button>
@@ -561,7 +576,7 @@
 <script src="js/asset-manager.js"></script>
 <script src="js/keyword-engine.js"></script>
 <script src="admin-modules/layer-panel.js"></script>
-<script src="admin-modules/asset-panel.js"></script>
+<script src="admin-modules/asset-panel.js?v=2"></script>
 <script src="admin-modules/keyword-panel.js"></script>
 <script src="admin-modules/preview-panel.js?v=2"></script>
 
@@ -582,12 +597,25 @@ const ADMIN_STORAGE_KEY = 'avatar-os-admin-layers-v1';
 
 function _saveLayers() {
   try {
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(_layers));
+    // Strip any dataURL srcs before saving (too large for localStorage)
+    const toSave = _layers.map(layer => ({
+      ...layer,
+      assets: layer.assets.map(a => ({
+        ...a,
+        src: (a.src && a.src.startsWith('data:')) ? `assets/${layer.id}/${a.id}.svg` : a.src
+      }))
+    }));
+    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(toSave));
     const el = document.getElementById('save-status');
     el.textContent = '✓ Guardado';
     el.className = 'saved';
+    document.getElementById('btn-save-manual').classList.remove('visible');
+    _dirty = false;
   } catch(e) {
     console.warn('[Admin] No se pudo guardar en localStorage', e);
+    const el = document.getElementById('save-status');
+    el.textContent = '✗ Error al guardar';
+    el.className = 'unsaved';
   }
 }
 
@@ -624,6 +652,7 @@ async function init() {
   document.getElementById('btn-test-random').onclick = () => PreviewPanel.randomize();
   document.getElementById('btn-preview-export').onclick = exportPreviewPNG;
   document.getElementById('btn-export-config').onclick = () => AssetManager.exportLayerConfig(_layers);
+  document.getElementById('btn-save-manual').onclick = () => _saveLayers();
   document.getElementById('btn-reset-config').onclick = () => {
     if (!confirm('¿Resetear configuración? Se perderán los cambios guardados localmente.')) return;
     localStorage.removeItem(ADMIN_STORAGE_KEY);
@@ -951,8 +980,9 @@ function buildLayerToggles() {
 function markDirty() {
   _dirty = true;
   const el = document.getElementById('save-status');
-  el.textContent = '● Cambios sin guardar';
+  el.textContent = '● Sin guardar';
   el.className = 'unsaved';
+  document.getElementById('btn-save-manual').classList.add('visible');
   _saveLayers();
 }
 
