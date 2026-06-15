@@ -678,21 +678,28 @@ function _makeAssetCard(layer, asset) {
 }
 
 async function _renderThumb(thumbCanvas, layer, asset) {
+  const SIZE = 120;
+  // Render en canvas temporal (Engine lo pone a 2048×2048) y luego copiar al thumb
+  const tmp = document.createElement('canvas');
   const fakeRegistry = { assets: [asset] };
   const fakeState = {
     getTokens: () => ({ 'skin-color': '#F9C7B6', 'hair-color': '#00B181' }),
     getSelectedAssets: () => ({ [layer.id]: asset.id }),
   };
   try {
-    await Engine.render(thumbCanvas, [layer], fakeRegistry, fakeState);
+    await Engine.render(tmp, [layer], fakeRegistry, fakeState);
+    thumbCanvas.width = thumbCanvas.height = SIZE;
+    const ctx = thumbCanvas.getContext('2d');
+    ctx.drawImage(tmp, 0, 0, SIZE, SIZE);
   } catch(e) {
+    thumbCanvas.width = thumbCanvas.height = SIZE;
     const ctx = thumbCanvas.getContext('2d');
     ctx.fillStyle = '#1E1E2A';
-    ctx.fillRect(0, 0, 120, 120);
+    ctx.fillRect(0, 0, SIZE, SIZE);
     ctx.fillStyle = '#555';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(asset.label.slice(0, 14), 60, 62);
+    ctx.fillText(asset.label.slice(0, 14), SIZE/2, SIZE/2 + 4);
   }
 }
 
