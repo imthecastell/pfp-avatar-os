@@ -55,24 +55,6 @@
       "optional": true
     },
     {
-      "order": 7,
-      "id": "facial-hair",
-      "label": "Vello facial",
-      "type": "svg",
-      "blendMode": "source-over",
-      "colorToken": "hair-color",
-      "optional": true
-    },
-    {
-      "order": 8,
-      "id": "mask",
-      "label": "Máscara",
-      "type": "svg",
-      "blendMode": "source-over",
-      "colorToken": null,
-      "optional": true
-    },
-    {
       "order": 9,
       "id": "acc-front",
       "label": "Accesorio (frente)",
@@ -82,40 +64,31 @@
       "optional": true
     },
     {
-      "order": 10,
-      "id": "acc-face",
-      "label": "Accesorio facial",
-      "type": "svg",
-      "blendMode": "source-over",
-      "colorToken": null,
-      "optional": true
-    },
-    {
+      "id": "mask",
+      "label": "Máscara",
       "order": 11,
-      "id": "effect-front",
-      "label": "Efecto (frente)",
       "type": "svg",
       "blendMode": "source-over",
       "colorToken": null,
       "optional": true
     },
     {
-      "order": 12,
       "id": "effect-final",
       "label": "Efecto final",
+      "order": 12,
       "type": "svg",
       "blendMode": "soft-light",
       "colorToken": null,
-      "optional": true
+      "optional": false
     },
     {
+      "id": "Frame",
+      "label": "Frame",
       "order": 13,
-      "id": "frame",
-      "label": "Marco",
-      "type": "svg",
+      "type": "image",
       "blendMode": "source-over",
       "colorToken": null,
-      "optional": true
+      "optional": false
     }
   ]
 }
