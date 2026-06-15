@@ -1,22 +1,6 @@
 {
   "assets": [
     {
-      "id": "shirt-basic",
-      "layerId": "shirt",
-      "label": "Básica",
-      "src": "placeholder:shirt",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "shirt-hoodie",
-      "layerId": "shirt",
-      "label": "Hoodie",
-      "src": "placeholder:shirt",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "acc-back-none",
       "layerId": "acc-back",
       "label": "Ninguno",
@@ -257,14 +241,6 @@
       "colorOverrides": []
     },
     {
-      "id": "shirt---base",
-      "layerId": "shirt",
-      "label": "Shirt   Base",
-      "src": "assets/shirt/shirt - base.svg",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "acc---ducket-hat",
       "layerId": "acc-front",
       "label": "Acc   Ducket Hat",
@@ -421,6 +397,46 @@
       "layerId": "head",
       "label": "Head   Wide Rounded",
       "src": "assets/head/head - wide rounded.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "shirt---special",
+      "layerId": "shirt",
+      "label": "Shirt   Special",
+      "src": "assets/shirt/shirt - special.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "shirt---base",
+      "layerId": "shirt",
+      "label": "Shirt   Base",
+      "src": "assets/shirt/shirt - base.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "jacket-open",
+      "layerId": "shirt",
+      "label": "Jacket Open",
+      "src": "assets/shirt/jacket open.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "jacket-limited",
+      "layerId": "shirt",
+      "label": "Jacket Limited",
+      "src": "assets/shirt/jacket limited.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "jacket-a",
+      "layerId": "shirt",
+      "label": "Jacket A",
+      "src": "assets/shirt/jacket a.png",
       "tags": [],
       "colorOverrides": []
     }
