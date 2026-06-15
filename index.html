@@ -628,9 +628,10 @@ const HAIR_PRESETS = [
 async function init() {
   State.load();
 
+  const t = Date.now();
   const [layersData, registryData] = await Promise.all([
-    fetch('data/layer-config.json').then(r => r.json()),
-    fetch('data/asset-registry.json').then(r => r.json()),
+    fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
+    fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
   ]);
 
   // Preferir datos del admin (localStorage) sobre los archivos JSON si existen

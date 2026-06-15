@@ -662,9 +662,10 @@ async function init() {
     _layers   = JSON.parse(savedLayers);
     _registry = JSON.parse(savedRegistry);
   } else {
+    const t = Date.now();
     const [ld, rd] = await Promise.all([
-      fetch('data/layer-config.json').then(r => r.json()),
-      fetch('data/asset-registry.json').then(r => r.json()),
+      fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
+      fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
     ]);
     _layers   = ld.layers.sort((a, b) => a.order - b.order);
     _registry = rd;
