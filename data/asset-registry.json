@@ -1,14 +1,6 @@
 {
   "assets": [
     {
-      "id": "acc-front-none",
-      "layerId": "acc-front",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "bg---structure",
       "layerId": "background",
       "label": "Bg   Structure",
