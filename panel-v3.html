@@ -385,6 +385,7 @@
   <span class="dirty-indicator" id="dirty-indicator">● cambios sin guardar</span>
   <div class="topbar-actions">
     <button class="btn btn-ghost btn-sm" id="btn-randomize">🎲 Aleatorio</button>
+    <button class="btn btn-accent btn-sm" id="btn-batch-upload">📦 Carga por lote</button>
     <button class="btn btn-ghost btn-sm" id="btn-export-json">⬇ Exportar JSON</button>
     <a href="index.html" target="_blank" class="btn btn-ghost btn-sm">← Builder</a>
   </div>
@@ -479,6 +480,7 @@ async function init() {
   document.getElementById('btn-preview-random').onclick  = () => { _randomizePreview(); doPreviewRender(); };
   document.getElementById('btn-preview-refresh').onclick = doPreviewRender;
   document.getElementById('btn-export-json').onclick  = exportJSON;
+  document.getElementById('btn-batch-upload').onclick = openBatchModal;
 }
 
 // ── Persistence ───────────────────────────────────────────────────────────
@@ -981,6 +983,204 @@ function showToast(msg, type = 'info', duration = 4000) {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
+}
+
+// ── Batch upload ──────────────────────────────────────────────────────────
+
+/**
+ * Detecta el layerId a partir del nombre de archivo.
+ * Estrategia: busca el prefijo más largo de _layers.id que sea prefijo del slug del archivo.
+ * Ejemplo: "hair-back-long-waves.svg" → layerId "hair-back"
+ */
+function _detectLayer(filename) {
+  const slug = filename.replace(/\.[^.]+$/, '').toLowerCase();
+  // Ordenar por longitud desc para preferir match más específico
+  const sorted = [..._layers].sort((a, b) => b.id.length - a.id.length);
+  for (const l of sorted) {
+    if (slug === l.id || slug.startsWith(l.id + '-') || slug.startsWith(l.id + '_')) {
+      return l.id;
+    }
+  }
+  return null;
+}
+
+function _slugToLabel(filename) {
+  return filename
+    .replace(/\.[^.]+$/, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function openBatchModal() {
+  // Items pendientes de importar: [{ file, layerId, label, src, duplicate }]
+  let _items = [];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.alignItems = 'flex-start';
+  overlay.style.paddingTop = '40px';
+
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  box.style.width = '720px';
+  box.style.maxHeight = '80vh';
+  box.style.display = 'flex';
+  box.style.flexDirection = 'column';
+  box.style.gap = '12px';
+
+  box.innerHTML = `
+    <h3>📦 Carga por lote</h3>
+    <p style="font-size:11px;color:var(--text-muted);line-height:1.5">
+      Arrastra o selecciona múltiples SVG/PNG. El sistema detecta la capa automáticamente por el nombre del archivo.<br>
+      <strong>Convención:</strong> <code style="background:var(--surface3);padding:2px 5px;border-radius:4px">{layerId}-{variante}.svg</code>
+      — ej: <code style="background:var(--surface3);padding:2px 5px;border-radius:4px">hair-back-ondulado.svg</code>
+    </p>
+    <label id="batch-drop" style="
+      border:2px dashed var(--border);border-radius:var(--radius);padding:24px;
+      text-align:center;cursor:pointer;color:var(--text-muted);font-size:12px;
+      transition:border-color .15s,background .15s;display:block;
+    ">
+      Arrastra archivos aquí o haz clic para seleccionar
+      <input type="file" accept=".svg,.png,.jpg" multiple style="display:none">
+    </label>
+    <div id="batch-table-wrap" style="flex:1;overflow-y:auto;min-height:0"></div>
+    <div id="batch-summary" style="font-size:11px;color:var(--text-muted)"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm modal-close">Cancelar</button>
+      <button class="btn btn-accent btn-sm" id="batch-confirm" disabled>Importar todo</button>
+    </div>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  box.querySelectorAll('.modal-close').forEach(b => b.onclick = close);
+  overlay.onclick = e => { if (e.target === overlay) close(); };
+
+  const dropZone = box.querySelector('#batch-drop');
+  const fileInput = dropZone.querySelector('input');
+  const tableWrap = box.querySelector('#batch-table-wrap');
+  const summary   = box.querySelector('#batch-summary');
+  const confirmBtn= box.querySelector('#batch-confirm');
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; dropZone.style.background = 'rgba(124,92,252,.05)'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; dropZone.style.background = ''; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = ''; dropZone.style.background = '';
+    processFiles(e.dataTransfer.files);
+  });
+  fileInput.onchange = e => processFiles(e.target.files);
+
+  function processFiles(files) {
+    _items = [];
+    for (const file of files) {
+      const detectedLayerId = _detectLayer(file.name);
+      const slug = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
+      const assetId = slug;
+      const src = detectedLayerId ? `assets/${detectedLayerId}/${file.name}` : `assets/unknown/${file.name}`;
+      const duplicate = _registry.assets.some(a => a.id === assetId || a.src === src);
+      _items.push({ file, layerId: detectedLayerId || '', label: _slugToLabel(file.name), assetId, src, duplicate });
+    }
+    renderTable();
+  }
+
+  function renderTable() {
+    if (!_items.length) { tableWrap.innerHTML = ''; confirmBtn.disabled = true; return; }
+
+    const validCount = _items.filter(i => i.layerId && !i.duplicate).length;
+    const warnCount  = _items.filter(i => !i.layerId).length;
+    const dupCount   = _items.filter(i => i.duplicate).length;
+    summary.textContent = `${_items.length} archivos · ${validCount} importables · ${warnCount} sin capa detectada · ${dupCount} duplicados`;
+    confirmBtn.disabled = validCount === 0;
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px';
+    table.innerHTML = `
+      <thead>
+        <tr style="color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Archivo</th>
+          <th style="padding:6px 8px">Capa detectada</th>
+          <th style="padding:6px 8px">Label</th>
+          <th style="padding:6px 8px">Estado</th>
+        </tr>
+      </thead>
+    `;
+    const tbody = document.createElement('tbody');
+
+    _items.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid rgba(255,255,255,.04)';
+      const statusColor = item.duplicate ? 'var(--warn)' : item.layerId ? 'var(--success)' : 'var(--danger)';
+      const statusText  = item.duplicate ? '⚠ Duplicado' : item.layerId ? '✓ Listo' : '✕ Sin capa';
+
+      tr.innerHTML = `
+        <td style="padding:5px 8px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.file.name}">${item.file.name}</td>
+        <td style="padding:5px 8px"></td>
+        <td style="padding:5px 8px"></td>
+        <td style="padding:5px 8px;color:${statusColor};font-weight:600">${statusText}</td>
+      `;
+
+      // Layer select
+      const layerSelect = document.createElement('select');
+      layerSelect.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--text);font-size:11px;width:100%';
+      const noneOpt = document.createElement('option');
+      noneOpt.value = ''; noneOpt.textContent = '— seleccionar —';
+      layerSelect.appendChild(noneOpt);
+      _layers.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.id; opt.textContent = `${l.id}`;
+        if (l.id === item.layerId) opt.selected = true;
+        layerSelect.appendChild(opt);
+      });
+      layerSelect.onchange = () => {
+        _items[idx].layerId = layerSelect.value;
+        _items[idx].src = layerSelect.value ? `assets/${layerSelect.value}/${item.file.name}` : '';
+        _items[idx].duplicate = _registry.assets.some(a => a.src === _items[idx].src);
+        renderTable();
+      };
+      tr.children[1].appendChild(layerSelect);
+
+      // Label input
+      const labelInput = document.createElement('input');
+      labelInput.value = item.label;
+      labelInput.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--text);font-size:11px;width:100%';
+      labelInput.oninput = () => { _items[idx].label = labelInput.value; };
+      tr.children[2].appendChild(labelInput);
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    tableWrap.innerHTML = '';
+    tableWrap.appendChild(table);
+  }
+
+  confirmBtn.onclick = () => {
+    const toImport = _items.filter(i => i.layerId && !i.duplicate);
+    const copyPaths = [];
+
+    toImport.forEach(item => {
+      _registry.assets.push({
+        id: item.assetId,
+        layerId: item.layerId,
+        label: item.label,
+        src: item.src,
+        tags: [],
+        colorOverrides: [],
+      });
+      copyPaths.push(item.src);
+    });
+
+    if (toImport.length) {
+      _markDirty();
+      renderLayerList();
+      if (_activeLayerId) renderCenter();
+      showToast(`${toImport.length} assets importados.\nCopia los archivos:\n` + copyPaths.map(p => '• ' + p).join('\n'), 'info', 10000);
+    }
+    close();
+  };
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────
