@@ -1,138 +1,10 @@
 {
   "assets": [
     {
-      "id": "hair-front-none",
-      "layerId": "hair-front",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "hair-front-short",
-      "layerId": "hair-front",
-      "label": "Corto",
-      "src": "placeholder:hair-front",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "hair-front-long",
-      "layerId": "hair-front",
-      "label": "Largo",
-      "src": "placeholder:hair-front",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "facial-hair-none",
-      "layerId": "facial-hair",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "facial-hair-beard",
-      "layerId": "facial-hair",
-      "label": "Barba",
-      "src": "placeholder:facial-hair",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "mask-none",
-      "layerId": "mask",
-      "label": "Ninguna",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "mask-shades",
-      "layerId": "mask",
-      "label": "Gafas",
-      "src": "placeholder:mask",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "acc-front-none",
       "layerId": "acc-front",
       "label": "Ninguno",
       "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "acc-front-chain",
-      "layerId": "acc-front",
-      "label": "Cadena",
-      "src": "placeholder:acc-front",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "acc-face-none",
-      "layerId": "acc-face",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "acc-face-blush",
-      "layerId": "acc-face",
-      "label": "Rubor",
-      "src": "placeholder:acc-face",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "effect-front-none",
-      "layerId": "effect-front",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "effect-front-stars",
-      "layerId": "effect-front",
-      "label": "Estrellas",
-      "src": "placeholder:effect-front",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "effect-final-none",
-      "layerId": "effect-final",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "effect-final-film",
-      "layerId": "effect-final",
-      "label": "Film",
-      "src": "placeholder:effect-final",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "frame-none",
-      "layerId": "frame",
-      "label": "Ninguno",
-      "src": null,
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "frame-gold",
-      "layerId": "frame",
-      "label": "Oro",
-      "src": "placeholder:frame",
       "tags": [],
       "colorOverrides": []
     },
@@ -221,14 +93,6 @@
       "layerId": "background",
       "label": "Bg   Desert",
       "src": "assets/background/bg - desert.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "acc---ducket-hat",
-      "layerId": "acc-front",
-      "label": "Acc   Ducket Hat",
-      "src": "assets/acc-front/acc - ducket hat.png",
       "tags": [],
       "colorOverrides": []
     },
@@ -421,6 +285,142 @@
       "layerId": "shirt",
       "label": "shirt - base",
       "src": "assets/shirt/shirt - base.svg",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---plain-1781533197028",
+      "layerId": "hair-front",
+      "label": "f hair - plain",
+      "src": "assets/hair-front/f hair - plain.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---horn-1781533197062",
+      "layerId": "hair-front",
+      "label": "f hair - horn",
+      "src": "assets/hair-front/f hair - horn.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---afro-1781533197062",
+      "layerId": "hair-front",
+      "label": "f hair - afro",
+      "src": "assets/hair-front/f hair - afro.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---fleco-a-1781533197063",
+      "layerId": "hair-front",
+      "label": "f hair - fleco a",
+      "src": "assets/hair-front/f hair - fleco a.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---fleco-b-1781533197064",
+      "layerId": "hair-front",
+      "label": "f hair - fleco b",
+      "src": "assets/hair-front/f hair - fleco b.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "f-hair---festival-1781533197064",
+      "layerId": "hair-front",
+      "label": "f hair - festival",
+      "src": "assets/hair-front/f hair - festival.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "mesa-de-trabajo3-1781533197065",
+      "layerId": "hair-front",
+      "label": "Mesa de trabajo3",
+      "src": "assets/hair-front/Mesa de trabajo3.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "masc---nature-1781533255127",
+      "layerId": "mask",
+      "label": "masc - nature",
+      "src": "assets/mask/masc - nature.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "masc---butterfly--1781533255128",
+      "layerId": "mask",
+      "label": "masc - butterfly ",
+      "src": "assets/mask/masc - butterfly .png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "masc---stone-1781533255128",
+      "layerId": "mask",
+      "label": "masc - stone",
+      "src": "assets/mask/masc - stone.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "masc---wind-1781533255129",
+      "layerId": "mask",
+      "label": "Masc - wind",
+      "src": "assets/mask/Masc - wind.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc---ducket-hat-1781533288552",
+      "layerId": "acc-front",
+      "label": "acc - ducket hat",
+      "src": "assets/acc-front/acc - ducket hat.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc---cap-back-1781533288554",
+      "layerId": "acc-front",
+      "label": "acc - cap back",
+      "src": "assets/acc-front/acc - cap back.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc---cap-front-1781533288554",
+      "layerId": "acc-front",
+      "label": "acc - cap front",
+      "src": "assets/acc-front/acc - cap front.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "acc---bucket-hat-1781533288555",
+      "layerId": "acc-front",
+      "label": "acc - bucket hat",
+      "src": "assets/acc-front/acc - bucket hat.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "final-overlay_2-1781533768510",
+      "layerId": "effect-final",
+      "label": "final overlay_2",
+      "src": "assets/effect-final/final overlay_2.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "final-overlay-1781533775283",
+      "layerId": "Frame",
+      "label": "final overlay",
+      "src": "assets/Frame/final overlay.png",
       "tags": [],
       "colorOverrides": []
     }
