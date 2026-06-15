@@ -439,11 +439,71 @@
 
 const LAYERS_KEY   = 'avatar-os-admin-layers-v3';
 const REGISTRY_KEY = 'avatar-os-admin-registry-v3';
+const IDB_NAME     = 'avatar-os-blobs';
+const IDB_STORE    = 'blobs';
+const IDB_VERSION  = 1;
+
+// ── IndexedDB helpers ─────────────────────────────────────────────────────
+let _idb = null;
+function _openIDB() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => { _idb = e.target.result; resolve(_idb); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+async function _idbPut(id, blob) {
+  const db = await _openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(blob, id);
+    tx.oncomplete = resolve;
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+async function _idbGet(id) {
+  const db = await _openIDB();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(id);
+    req.onsuccess = e => resolve(e.target.result || null);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+async function _idbDelete(id) {
+  const db = await _openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+async function _idbGetAll() {
+  const db = await _openIDB();
+  return new Promise((resolve, reject) => {
+    const results = {};
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const store = tx.objectStore(IDB_STORE);
+    const reqKeys = store.getAllKeys();
+    reqKeys.onsuccess = e => {
+      const keys = e.target.result;
+      const reqVals = store.getAll();
+      reqVals.onsuccess = ev => {
+        ev.target.result.forEach((blob, i) => { results[keys[i]] = blob; });
+        resolve(results);
+      };
+      reqVals.onerror = ev => reject(ev.target.error);
+    };
+    reqKeys.onerror = e => reject(e.target.error);
+  });
+}
 
 let _layers   = [];
 let _registry = { assets: [] };
 let _activeLayerId = null;
-// dataURLs de archivos subidos en esta sesión (no se persisten)
+// Blob URLs para assets subidos — reconstruidos desde IndexedDB al iniciar
 const _sessionBlobs = new Map();  // assetId → objectURL
 let _isDirty  = false;
 
@@ -470,6 +530,16 @@ async function init() {
     ]);
     _layers   = ld.layers.sort((a, b) => a.order - b.order);
     _registry = rd;
+  }
+
+  // Restaurar blob URLs desde IndexedDB (persisten entre recargas)
+  try {
+    const allBlobs = await _idbGetAll();
+    Object.entries(allBlobs).forEach(([id, blob]) => {
+      _sessionBlobs.set(id, URL.createObjectURL(blob));
+    });
+  } catch(e) {
+    console.warn('Admin: no se pudieron restaurar blobs desde IndexedDB', e);
   }
 
   _layers.forEach(l => { _layerVis[l.id] = true; });
@@ -668,6 +738,11 @@ function _makeAssetCard(layer, asset) {
   delBtn.onclick = () => {
     if (!confirm(`¿Eliminar asset "${asset.label}"?`)) return;
     _registry.assets = _registry.assets.filter(a => a.id !== asset.id);
+    if (_sessionBlobs.has(asset.id)) {
+      URL.revokeObjectURL(_sessionBlobs.get(asset.id));
+      _sessionBlobs.delete(asset.id);
+      _idbDelete(asset.id).catch(() => {});
+    }
     _markDirty();
     renderCenter();
     renderLayerList();
@@ -732,7 +807,8 @@ async function _handleUpload(layer, files) {
     const existing = _registry.assets.find(a => a.src === relativeSrc);
     if (existing) continue;
 
-    // Guardar blob URL en sesión para preview inmediato
+    // Guardar blob en IndexedDB y blob URL en memoria
+    _idbPut(assetId, file).catch(e => console.warn('IDB put error', e));
     _sessionBlobs.set(assetId, URL.createObjectURL(file));
 
     _registry.assets.push({
@@ -839,6 +915,13 @@ function openLayerModal(layer) {
 function confirmDeleteLayer(layer) {
   if (!confirm(`¿Eliminar capa "${layer.label}" y todos sus assets?`)) return;
   _layers = _layers.filter(l => l.id !== layer.id);
+  _registry.assets.filter(a => a.layerId === layer.id).forEach(a => {
+    if (_sessionBlobs.has(a.id)) {
+      URL.revokeObjectURL(_sessionBlobs.get(a.id));
+      _sessionBlobs.delete(a.id);
+      _idbDelete(a.id).catch(() => {});
+    }
+  });
   _registry.assets = _registry.assets.filter(a => a.layerId !== layer.id);
   _activeLayerId = null;
   _markDirty();
@@ -1197,7 +1280,8 @@ function openBatchModal() {
     const copyPaths = [];
 
     toImport.forEach(item => {
-      // Blob URL para preview inmediato en esta sesión
+      // Guardar blob en IndexedDB y blob URL en memoria
+      _idbPut(item.assetId, item.file).catch(e => console.warn('IDB put error', e));
       _sessionBlobs.set(item.assetId, URL.createObjectURL(item.file));
 
       _registry.assets.push({
