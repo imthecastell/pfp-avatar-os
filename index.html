@@ -669,13 +669,37 @@ function _assetsForLayer(layerId) {
   return _registry.assets.filter(a => a.layerId === layerId);
 }
 
+// Selecciona asset y auto-selecciona el mismo grupo en capas vinculadas
+function _selectWithLinks(layerId, assetId) {
+  State.setSelectedAsset(layerId, assetId);
+  const layer = _layers.find(l => l.id === layerId);
+  const asset = _registry.assets.find(a => a.id === assetId);
+  if (!layer?.linkedLayers?.length || !asset?.group) return;
+  layer.linkedLayers.forEach(linkedId => {
+    const match = _registry.assets.find(a => a.layerId === linkedId && a.group === asset.group);
+    if (match) {
+      State.setSelectedAsset(linkedId, match.id);
+      refreshLayerGrid(linkedId);
+    }
+  });
+}
+
 // ── Randomización ──
 function _applyRandomSelections() {
-  _layers.forEach(layer => {
+  // Capas sin vínculos primero para que los grupos ya estén resueltos
+  const sorted = [..._layers].sort((a, b) => {
+    const aL = (a.linkedLayers||[]).length > 0 ? 1 : 0;
+    const bL = (b.linkedLayers||[]).length > 0 ? 1 : 0;
+    return aL - bL || a.order - b.order;
+  });
+  const settled = new Set();
+  sorted.forEach(layer => {
+    if (settled.has(layer.id)) return;
     const assets = _assetsForLayer(layer.id).filter(a => a.src !== undefined);
     if (assets.length) {
       const pick = assets[Math.floor(Math.random() * assets.length)];
-      State.setSelectedAsset(layer.id, pick.id);
+      _selectWithLinks(layer.id, pick.id);
+      (layer.linkedLayers || []).forEach(id => settled.add(id));
     }
   });
 }
@@ -767,7 +791,7 @@ function refreshLayerGrid(layerId) {
     }
 
     btn.onclick = () => {
-      State.setSelectedAsset(layerId, asset.id);
+      _selectWithLinks(layerId, asset.id);
       Engine.clearCache();
       AssetLoader.clearCache();
       refreshLayerGrid(layerId);

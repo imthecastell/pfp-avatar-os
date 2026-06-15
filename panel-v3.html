@@ -959,7 +959,7 @@ function _makeAssetCard(layer, asset) {
   previewBtn.title = 'Previsualizar';
   previewBtn.textContent = '▶';
   previewBtn.onclick = () => {
-    _previewSel[layer.id] = asset.id;
+    _selectWithLinks(layer.id, asset.id);
     doPreviewRender();
   };
 
@@ -1101,6 +1101,10 @@ function openLayerModal(layer) {
       <label>Optional</label>
       <input type="checkbox" id="lm-optional" ${data.optional?'checked':''}>
     </div>
+    <div class="form-row">
+      <label style="flex-shrink:0">Vincular capas</label>
+      <input id="lm-linked" value="${(data.linkedLayers||[]).join(',')}" placeholder="hair-back,hair-front" style="font-family:monospace;font-size:11px" title="IDs de capas separados por coma. Al seleccionar un asset aquí, se auto-selecciona el del mismo grupo en las capas vinculadas.">
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm modal-close">Cancelar</button>
       <button class="btn btn-accent btn-sm" id="lm-save">Guardar</button>
@@ -1119,13 +1123,15 @@ function openLayerModal(layer) {
     if (!id || !label) { showToast('ID y Label son obligatorios', 'error'); return; }
     if (isNew && _layers.find(l => l.id === id)) { showToast('ID ya existe', 'error'); return; }
 
+    const linkedRaw = box.querySelector('#lm-linked').value.trim();
     const updated = {
       id, label,
-      order:      parseInt(box.querySelector('#lm-order').value) || 0,
-      type:       box.querySelector('#lm-type').value,
-      blendMode:  box.querySelector('#lm-blend').value,
-      colorToken: box.querySelector('#lm-token').value || null,
-      optional:   box.querySelector('#lm-optional').checked,
+      order:        parseInt(box.querySelector('#lm-order').value) || 0,
+      type:         box.querySelector('#lm-type').value,
+      blendMode:    box.querySelector('#lm-blend').value,
+      colorToken:   box.querySelector('#lm-token').value || null,
+      optional:     box.querySelector('#lm-optional').checked,
+      linkedLayers: linkedRaw ? linkedRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
     };
 
     if (isNew) {
@@ -1191,6 +1197,10 @@ function openAssetModal(layer, asset) {
     <div class="form-row"><label>ID</label><input id="am-id" value="${data.id}" ${!isNew ? 'readonly' : ''} placeholder="hair-short-back"></div>
     <div class="form-row"><label>Label</label><input id="am-label" value="${data.label}" placeholder="Corto"></div>
     <div class="form-row"><label>Src (ruta)</label><input id="am-src" value="${data.src || ''}" placeholder="assets/${layer.id}/filename.svg"></div>
+    <div class="form-row">
+      <label title="Nombre de grupo compartido entre capas vinculadas. Ej: 'afro' en hair-front y hair-back">Grupo de estilo</label>
+      <input id="am-group" value="${data.group || ''}" placeholder="afro" style="font-family:monospace;font-size:12px">
+    </div>
     <div class="form-row"><label>Tags (csv)</label><input id="am-tags" value="${(data.tags||[]).join(',')}" placeholder="base,natural"></div>
     <div class="section-label" style="margin-top:12px">Color overrides (recoloreo)</div>
     <div id="am-overrides">${overridesHtml}</div>
@@ -1255,11 +1265,12 @@ function openAssetModal(layer, asset) {
     const id    = box.querySelector('#am-id').value.trim();
     const label = box.querySelector('#am-label').value.trim();
     const src   = box.querySelector('#am-src').value.trim() || null;
+    const group = box.querySelector('#am-group').value.trim() || null;
     const tags  = box.querySelector('#am-tags').value.split(',').map(t => t.trim()).filter(Boolean);
     if (!id || !label) { showToast('ID y Label son obligatorios', 'error'); return; }
     if (isNew && _registry.assets.find(a => a.id === id)) { showToast('ID ya existe', 'error'); return; }
 
-    const updated = { id, layerId: layer.id, label, src, tags, colorOverrides: data.colorOverrides || [] };
+    const updated = { id, layerId: layer.id, label, src, group, tags, colorOverrides: data.colorOverrides || [] };
 
     if (isNew) {
       _registry.assets.push(updated);
@@ -1276,14 +1287,35 @@ function openAssetModal(layer, asset) {
   };
 }
 
+// ── Linked layer selection ────────────────────────────────────────────────
+
+// Selecciona un asset en el preview y auto-selecciona el mismo grupo en capas vinculadas
+function _selectWithLinks(layerId, assetId, target = _previewSel) {
+  target[layerId] = assetId;
+  const layer = _layers.find(l => l.id === layerId);
+  const asset = _registry.assets.find(a => a.id === assetId);
+  if (!layer?.linkedLayers?.length || !asset?.group) return;
+  layer.linkedLayers.forEach(linkedId => {
+    const match = _registry.assets.find(a => a.layerId === linkedId && a.group === asset.group);
+    if (match) target[linkedId] = match.id;
+  });
+}
+
 // ── Preview ───────────────────────────────────────────────────────────────
 
 function _randomizePreview() {
-  _layers.forEach(layer => {
+  // Layers sin linkedLayers primero para que los vínculos no se sobreescriban
+  const sorted = [..._layers].sort((a, b) => {
+    const aLinked = (a.linkedLayers||[]).length > 0 ? 1 : 0;
+    const bLinked = (b.linkedLayers||[]).length > 0 ? 1 : 0;
+    return aLinked - bLinked || a.order - b.order;
+  });
+  sorted.forEach(layer => {
+    if (_previewSel[layer.id]) return; // ya fue seteado por un vínculo
     const assets = _registry.assets.filter(a => a.layerId === layer.id);
     if (assets.length) {
       const pick = assets[Math.floor(Math.random() * assets.length)];
-      _previewSel[layer.id] = pick.id;
+      _selectWithLinks(layer.id, pick.id);
     }
   });
 }
