@@ -12,7 +12,7 @@
     {
       "order": 1,
       "id": "emotion",
-      "label": "EmociÃÂ³n",
+      "label": "EmociÃÂÃÂ³n",
       "type": "image",
       "blendMode": "source-over",
       "colorToken": null,
@@ -21,7 +21,7 @@
     {
       "order": 2,
       "id": "hair-back",
-      "label": "Cabello (atrÃÂ¡s)",
+      "label": "Cabello (atrÃÂÃÂ¡s)",
       "type": "svg",
       "blendMode": "source-over",
       "colorToken": "hair-color",
@@ -65,7 +65,7 @@
     },
     {
       "id": "mask",
-      "label": "MÃÂ¡scara",
+      "label": "MÃÂÃÂ¡scara",
       "order": 11,
       "type": "svg",
       "blendMode": "source-over",
