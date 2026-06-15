@@ -682,22 +682,54 @@ const previewCanvas = document.getElementById('preview-canvas');
 
 // ── Init ──────────────────────────────────────────────────────────────────
 
-async function init() {
-  // Try localStorage first, then fetch files
-  const savedLayers   = localStorage.getItem(LAYERS_KEY);
-  const savedRegistry = localStorage.getItem(REGISTRY_KEY);
+async function _fetchFromGitHub(path) {
+  const res = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, {
+    headers: { Authorization: `Bearer ${_ghToken()}`, Accept: 'application/vnd.github+json' },
+  });
+  if (!res.ok) throw new Error(`GitHub ${res.status}`);
+  const data = await res.json();
+  return JSON.parse(atob(data.content.replace(/\n/g, '')));
+}
 
-  if (savedLayers && savedRegistry) {
-    _layers   = JSON.parse(savedLayers);
-    _registry = JSON.parse(savedRegistry);
+async function init() {
+  // Si hay token, siempre leer desde GitHub (fuente de verdad compartida)
+  // Si no, intentar localStorage y luego los archivos estáticos
+  if (_ghToken()) {
+    try {
+      showToast('Sincronizando con GitHub…', 'info', 2000);
+      const [ld, rd] = await Promise.all([
+        _fetchFromGitHub('data/layer-config.json'),
+        _fetchFromGitHub('data/asset-registry.json'),
+      ]);
+      _layers   = ld.layers.sort((a, b) => a.order - b.order);
+      _registry = rd;
+      // Actualizar localStorage con datos frescos
+      localStorage.setItem(LAYERS_KEY,   JSON.stringify(_layers));
+      localStorage.setItem(REGISTRY_KEY, JSON.stringify(_registry));
+    } catch(e) {
+      console.warn('GitHub fetch falló, usando localStorage:', e);
+      const savedLayers   = localStorage.getItem(LAYERS_KEY);
+      const savedRegistry = localStorage.getItem(REGISTRY_KEY);
+      if (savedLayers && savedRegistry) {
+        _layers   = JSON.parse(savedLayers);
+        _registry = JSON.parse(savedRegistry);
+      }
+    }
   } else {
-    const t = Date.now();
-    const [ld, rd] = await Promise.all([
-      fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
-      fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
-    ]);
-    _layers   = ld.layers.sort((a, b) => a.order - b.order);
-    _registry = rd;
+    const savedLayers   = localStorage.getItem(LAYERS_KEY);
+    const savedRegistry = localStorage.getItem(REGISTRY_KEY);
+    if (savedLayers && savedRegistry) {
+      _layers   = JSON.parse(savedLayers);
+      _registry = JSON.parse(savedRegistry);
+    } else {
+      const t = Date.now();
+      const [ld, rd] = await Promise.all([
+        fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
+        fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
+      ]);
+      _layers   = ld.layers.sort((a, b) => a.order - b.order);
+      _registry = rd;
+    }
   }
 
   // Restaurar blob URLs desde IndexedDB (persisten entre recargas)
