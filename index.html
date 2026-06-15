@@ -736,11 +736,22 @@ async function doRender() {
   }
 }
 
+// Conjunto de capas que son controladas automáticamente por otra (no se muestran)
+function _controlledLayerIds() {
+  const controlled = new Set();
+  _layers.forEach(l => (l.linkedLayers || []).forEach(id => controlled.add(id)));
+  return controlled;
+}
+
 // ── Build UI ──
 function buildLayersUI() {
+  const controlled = _controlledLayerIds();
   _layers.forEach(layer => {
     const slot = document.getElementById('slot-' + layer.id);
     if (!slot) return;
+    // Ocultar capas auto-controladas (ej. hair-back cuando hair-front la vincula)
+    if (controlled.has(layer.id)) { slot.style.display = 'none'; return; }
+    slot.style.display = '';
     slot.innerHTML = '';
     const header = document.createElement('div');
     header.className = 'layer-row-header';
@@ -767,6 +778,12 @@ function refreshLayerGrid(layerId) {
   const layer = _layers.find(l => l.id === layerId);
   const assets = _assetsForLayer(layerId);
   const selected = State.getSelectedAsset(layerId);
+
+  // Capas vinculadas para thumbnails compuestos
+  const linkedLayers = (layer.linkedLayers || [])
+    .map(id => _layers.find(l => l.id === id))
+    .filter(Boolean);
+
   grid.innerHTML = '';
   assets.forEach(asset => {
     const btn = document.createElement('button');
@@ -774,12 +791,10 @@ function refreshLayerGrid(layerId) {
     btn.title = asset.label;
 
     if (!asset.src) {
-      // "Ninguno" — X
       const ctx2 = document.createElement('canvas');
       ctx2.width = ctx2.height = 48;
       const c = ctx2.getContext('2d');
-      c.fillStyle = '#1A1A22';
-      c.fillRect(0,0,48,48);
+      c.fillStyle = '#1A1A22'; c.fillRect(0,0,48,48);
       c.strokeStyle = '#555'; c.lineWidth = 2.5;
       c.beginPath(); c.moveTo(16,16); c.lineTo(32,32); c.moveTo(32,16); c.lineTo(16,32); c.stroke();
       btn.appendChild(ctx2);
@@ -787,7 +802,12 @@ function refreshLayerGrid(layerId) {
       const thumb = document.createElement('canvas');
       thumb.width = thumb.height = 48;
       btn.appendChild(thumb);
-      _renderThumb(thumb, asset, layer);
+      // Si hay capas vinculadas y el asset tiene grupo, renderizar compuesto
+      if (linkedLayers.length && asset.group) {
+        _renderThumbComposite(thumb, asset, layer, linkedLayers);
+      } else {
+        _renderThumb(thumb, asset, layer);
+      }
     }
 
     btn.onclick = () => {
@@ -795,10 +815,42 @@ function refreshLayerGrid(layerId) {
       Engine.clearCache();
       AssetLoader.clearCache();
       refreshLayerGrid(layerId);
+      // Refrescar grids de capas vinculadas para marcar selected
+      linkedLayers.forEach(ll => refreshLayerGrid(ll.id));
       scheduleRender();
     };
     grid.appendChild(btn);
   });
+}
+
+async function _renderThumbComposite(thumbCanvas, asset, layer, linkedLayers) {
+  // Recopilar todos los assets del mismo grupo en las capas vinculadas
+  const linkedAssets = linkedLayers.map(ll => {
+    const match = _registry.assets.find(a => a.layerId === ll.id && a.group === asset.group);
+    return match ? { layer: ll, asset: match } : null;
+  }).filter(Boolean);
+
+  // Ordenar por order: capas vinculadas debajo, capa principal encima
+  const allParts = [
+    ...linkedAssets.map(x => ({ layer: x.layer, asset: x.asset })),
+    { layer, asset },
+  ].sort((a, b) => a.layer.order - b.layer.order);
+
+  const tmp = document.createElement('canvas');
+  tmp.width = tmp.height = 512;
+  const fakeRegistry = { assets: allParts.map(p => p.asset) };
+  const sel = {};
+  allParts.forEach(p => { sel[p.layer.id] = p.asset.id; });
+  const fakeState = {
+    getTokens: () => State.getTokens(),
+    getSelectedAssets: () => sel,
+  };
+  try {
+    await Engine.render(tmp, allParts.map(p => p.layer), fakeRegistry, fakeState);
+    const ctx = thumbCanvas.getContext('2d');
+    ctx.clearRect(0,0,48,48);
+    ctx.drawImage(tmp, 0, 0, 48, 48);
+  } catch(e) { /* silencioso */ }
 }
 
 async function _renderThumb(thumbCanvas, asset, layer) {
