@@ -576,7 +576,7 @@
 <script src="js/asset-manager.js"></script>
 <script src="js/keyword-engine.js"></script>
 <script src="admin-modules/layer-panel.js"></script>
-<script src="admin-modules/asset-panel.js?v=2"></script>
+<script src="admin-modules/asset-panel.js?v=3"></script>
 <script src="admin-modules/keyword-panel.js"></script>
 <script src="admin-modules/preview-panel.js?v=2"></script>
 
@@ -641,7 +641,7 @@ async function init() {
   _tokens = tokensData;
   _kwConfig = kwData;
 
-  PreviewPanel.init(previewCanvas, _layers, _flatTokens());
+  PreviewPanel.init(previewCanvas, _layers, window._flatTokens());
   buildLayerToggles();
   switchTab('layers');
 
@@ -670,7 +670,7 @@ async function init() {
   };
 }
 
-function _flatTokens() {
+window._flatTokens = function _flatTokens() {
   const out = {};
   const list = _tokens.tokens || Object.entries(_tokens).map(([id, def]) => ({ id, ...def }));
   list.forEach(def => {

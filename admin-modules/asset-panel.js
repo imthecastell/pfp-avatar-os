@@ -73,19 +73,36 @@ const AssetPanel = (() => {
 
     const preview = document.createElement('div');
     preview.className = 'asset-card-preview';
-    // Use in-session dataURL if available, otherwise use src path
-    const displaySrc = _sessionPreviews.get(asset.id) || asset.src;
-    if (displaySrc && displaySrc.startsWith('placeholder:')) {
-      preview.style.background = '#2A2A3A';
-      preview.innerHTML = `<span style="font-size:11px;color:#888">${displaySrc.replace('placeholder:','')}</span>`;
-    } else if (displaySrc && (displaySrc.startsWith('data:') || displaySrc.startsWith('assets/') || displaySrc.startsWith('http'))) {
-      const img = document.createElement('img');
-      img.src = displaySrc;
-      img.style.cssText = 'width:100%;height:100%;object-fit:contain';
-      preview.appendChild(img);
+
+    if (!asset.src) {
+      // "Ninguno" — show X
+      preview.innerHTML = '<span style="font-size:22px;color:#555">✕</span>';
     } else {
-      preview.innerHTML = '<span style="font-size:22px">✕</span>';
-      preview.style.color = '#555';
+      // Render via canvas so placeholder:* and real SVGs both work
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = thumbCanvas.height = 100;
+      thumbCanvas.style.cssText = 'width:100%;height:100%;display:block';
+      preview.appendChild(thumbCanvas);
+
+      // Use in-session dataURL for newly uploaded files, else use asset.src
+      const srcForRender = _sessionPreviews.get(asset.id) || asset.src;
+      const fakeLayer = { ..._layer, assets: [] };
+      const fakeTokens = (typeof window._flatTokens === 'function') ? window._flatTokens() : {};
+
+      (async () => {
+        try {
+          await Engine.render(thumbCanvas, [fakeLayer], { [_layer.id]: srcForRender }, fakeTokens);
+        } catch(e) {
+          // Fallback: show label text
+          const ctx = thumbCanvas.getContext('2d');
+          ctx.fillStyle = '#2A2A3A';
+          ctx.fillRect(0, 0, 100, 100);
+          ctx.fillStyle = '#666';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(asset.label.slice(0,12), 50, 52);
+        }
+      })();
     }
 
     const info = document.createElement('div');
