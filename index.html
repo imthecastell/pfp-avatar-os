@@ -511,6 +511,7 @@
     </div>
     <div class="canvas-controls">
       <button class="btn btn-ghost" id="btn-random">🎲 Aleatorio</button>
+      <button class="btn btn-ghost" id="btn-sync" title="Cargar últimos assets">↻</button>
       <button class="btn btn-primary" id="btn-export">✨ Exportar</button>
     </div>
   </div>
@@ -651,6 +652,7 @@ async function init() {
   scheduleRender();
 
   document.getElementById('btn-random').onclick = doRandom;
+  document.getElementById('btn-sync').onclick   = doSync;
   document.getElementById('btn-export').onclick = openExportModal;
   document.getElementById('modal-close').onclick = closeExportModal;
   document.getElementById('export-modal').addEventListener('click', e => {
@@ -717,6 +719,31 @@ function doRandom() {
   _applyRandomSelections();
   refreshLayersUI();
   scheduleRender();
+}
+
+// ── Sync ──
+async function doSync() {
+  const btn = document.getElementById('btn-sync');
+  btn.textContent = '…';
+  btn.disabled = true;
+  try {
+    const t = Date.now();
+    const [ld, rd] = await Promise.all([
+      fetch(`data/layer-config.json?t=${t}`).then(r => r.json()),
+      fetch(`data/asset-registry.json?t=${t}`).then(r => r.json()),
+    ]);
+    _layers   = ld.layers.sort((a, b) => a.order - b.order);
+    _registry = rd;
+    Engine.clearCache();
+    AssetLoader.clearCache();
+    buildLayersUI();
+    scheduleRender();
+  } catch(e) {
+    console.error('Sync error', e);
+  } finally {
+    btn.textContent = '↻';
+    btn.disabled = false;
+  }
 }
 
 // ── Render ──
