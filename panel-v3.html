@@ -1072,39 +1072,60 @@ async function _renderThumb(thumbCanvas, layer, asset) {
   }
 }
 
+// ── Image optimizer ───────────────────────────────────────────────────────
+// Escala la imagen a MAX_PX en el lado más largo y exporta como WebP
+const IMG_MAX_PX  = 2048;
+const IMG_QUALITY = 0.88;
+
+async function _optimizeImage(file) {
+  const isBitmap = /\.(png|jpe?g|webp)$/i.test(file.name);
+  if (!isBitmap) return { blob: file, ext: file.name.replace(/.*\./, '').toLowerCase() };
+
+  const bitmap = await createImageBitmap(file);
+  const { width: w, height: h } = bitmap;
+  const scale  = Math.min(1, IMG_MAX_PX / Math.max(w, h));
+  const dw = Math.round(w * scale);
+  const dh = Math.round(h * scale);
+
+  const oc  = new OffscreenCanvas(dw, dh);
+  const ctx = oc.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, dw, dh);
+  bitmap.close();
+
+  const blob = await oc.convertToBlob({ type: 'image/webp', quality: IMG_QUALITY });
+  const origKB = Math.round(file.size / 1024);
+  const newKB  = Math.round(blob.size / 1024);
+  console.log(`Optimized ${file.name}: ${origKB}KB → ${newKB}KB (${dw}×${dh})`);
+  return { blob, ext: 'webp' };
+}
+
 // ── Upload handler ────────────────────────────────────────────────────────
 
 async function _handleUpload(layer, files) {
-  const copyPaths = [];
   for (const file of files) {
-    const slug = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
+    const slug  = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
     const label = file.name.replace(/\.[^.]+$/, '');
-    const assetId = `${slug}-${Date.now()}`;
-    const relativeSrc = `assets/${layer.id}/${file.name}`;
+
+    showToast(`Optimizando "${file.name}"…`, 'info', 2000);
+    const { blob: optimized, ext } = await _optimizeImage(file);
+
+    const filename    = `${slug}.${ext}`;
+    const assetId     = `${slug}-${Date.now()}`;
+    const relativeSrc = `assets/${layer.id}/${filename}`;
 
     const existing = _registry.assets.find(a => a.src === relativeSrc);
     if (existing) continue;
 
-    // Guardar blob en IndexedDB y blob URL en memoria
-    _idbPut(assetId, file).catch(e => console.warn('IDB put error', e));
-    _sessionBlobs.set(assetId, URL.createObjectURL(file));
+    _idbPut(assetId, optimized).catch(e => console.warn('IDB put error', e));
+    _sessionBlobs.set(assetId, URL.createObjectURL(optimized));
 
-    _registry.assets.push({
-      id: assetId,
-      layerId: layer.id,
-      label,
-      src: relativeSrc,
-      tags: [],
-      colorOverrides: [],
-    });
-
+    _registry.assets.push({ id: assetId, layerId: layer.id, label, src: relativeSrc, tags: [], colorOverrides: [] });
     _markDirty();
     renderCenter();
     renderLayerList();
 
-    // Publicar a GitHub en background
-    showToast(`Subiendo "${file.name}" a GitHub…`, 'info', 3000);
-    _ghPublishAsset(assetId, file, relativeSrc);
+    showToast(`Subiendo "${filename}" a GitHub…`, 'info', 3000);
+    _ghPublishAsset(assetId, optimized, relativeSrc);
   }
 }
 
@@ -1613,20 +1634,21 @@ function openBatchModal() {
     const toImport = _items.filter(i => i.layerId && !i.duplicate);
     const copyPaths = [];
 
-    toImport.forEach(item => {
-      // Guardar blob en IndexedDB y blob URL en memoria
-      _idbPut(item.assetId, item.file).catch(e => console.warn('IDB put error', e));
-      _sessionBlobs.set(item.assetId, URL.createObjectURL(item.file));
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Optimizando…';
+    for (const item of toImport) {
+      const { blob: optimized, ext } = await _optimizeImage(item.file);
+      const slug     = item.file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
+      const filename = `${slug}.${ext}`;
+      item.optimized = optimized;
+      item.src       = `assets/${item.layerId}/${filename}`;
 
-      _registry.assets.push({
-        id: item.assetId,
-        layerId: item.layerId,
-        label: item.label,
-        src: item.src,
-        tags: [],
-        colorOverrides: [],
-      });
-    });
+      _idbPut(item.assetId, optimized).catch(e => console.warn('IDB put error', e));
+      _sessionBlobs.set(item.assetId, URL.createObjectURL(optimized));
+
+      _registry.assets.push({ id: item.assetId, layerId: item.layerId, label: item.label, src: item.src, tags: [], colorOverrides: [] });
+    }
+    confirmBtn.disabled = false;
 
     if (toImport.length) {
       _markDirty();
@@ -1641,7 +1663,7 @@ function openBatchModal() {
           let ok = 0, fail = 0;
           for (const item of toImport) {
             try {
-              await _ghPutFile(item.src, item.file, `assets: add ${item.src}`);
+              await _ghPutFile(item.src, item.optimized || item.file, `assets: add ${item.src}`);
               ok++;
             } catch { fail++; }
           }
