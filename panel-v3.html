@@ -562,7 +562,14 @@ async function _ghGetSHA(path) {
 
 async function _ghPutFile(path, blob, message) {
   const ab = await blob.arrayBuffer();
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
+  // Chunked conversion para no reventar el stack con archivos grandes
+  const bytes = new Uint8Array(ab);
+  let binary = '';
+  const CHUNK = 8192;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  const b64 = btoa(binary);
   const sha = await _ghGetSHA(path);
   const body = { message, content: b64, branch: GH_BRANCH };
   if (sha) body.sha = sha;
