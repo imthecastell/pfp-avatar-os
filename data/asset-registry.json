@@ -1,94 +1,6 @@
 {
   "assets": [
     {
-      "id": "bg---structure",
-      "layerId": "background",
-      "label": "Bg   Structure",
-      "src": "assets/background/bg - structure.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---sky",
-      "layerId": "background",
-      "label": "Bg   Sky",
-      "src": "assets/background/bg - sky.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---stairs",
-      "layerId": "background",
-      "label": "Bg   Stairs",
-      "src": "assets/background/bg - stairs.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-dark",
-      "layerId": "background",
-      "label": "Bg   Oleo Dark",
-      "src": "assets/background/bg - oleo dark.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-w1",
-      "layerId": "background",
-      "label": "Bg   Oleo W1",
-      "src": "assets/background/bg - oleo W1.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-mod",
-      "layerId": "background",
-      "label": "Bg   Oleo Mod",
-      "src": "assets/background/bg - oleo Mod.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---arch",
-      "layerId": "background",
-      "label": "Bg   Arch",
-      "src": "assets/background/bg - arch.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-blue",
-      "layerId": "background",
-      "label": "Bg   Oleo Blue",
-      "src": "assets/background/bg - oleo blue.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-w2",
-      "layerId": "background",
-      "label": "Bg   Oleo W2",
-      "src": "assets/background/bg - oleo W2.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---oleo-pot",
-      "layerId": "background",
-      "label": "Bg   Oleo POT",
-      "src": "assets/background/bg - oleo POT.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
-      "id": "bg---desert",
-      "layerId": "background",
-      "label": "Bg   Desert",
-      "src": "assets/background/bg - desert.png",
-      "tags": [],
-      "colorOverrides": []
-    },
-    {
       "id": "em---desire",
       "layerId": "emotion",
       "label": "Em   Desire",
@@ -413,6 +325,94 @@
       "layerId": "Frame",
       "label": "final overlay",
       "src": "assets/Frame/final overlay.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-w2-1781536045308",
+      "layerId": "background",
+      "label": "bg - oleo W2",
+      "src": "assets/background/bg - oleo W2.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-dark-1781536045310",
+      "layerId": "background",
+      "label": "bg - oleo dark",
+      "src": "assets/background/bg - oleo dark.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---arch-1781536045311",
+      "layerId": "background",
+      "label": "bg - arch",
+      "src": "assets/background/bg - arch.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-blue-1781536045311",
+      "layerId": "background",
+      "label": "bg - oleo blue",
+      "src": "assets/background/bg - oleo blue.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---structure-1781536045312",
+      "layerId": "background",
+      "label": "bg - structure",
+      "src": "assets/background/bg - structure.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-w1-1781536045313",
+      "layerId": "background",
+      "label": "bg - oleo W1",
+      "src": "assets/background/bg - oleo W1.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---desert-1781536045313",
+      "layerId": "background",
+      "label": "bg - desert",
+      "src": "assets/background/bg - desert.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---stairs-1781536045314",
+      "layerId": "background",
+      "label": "bg - stairs",
+      "src": "assets/background/bg - stairs.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---sky-1781536045314",
+      "layerId": "background",
+      "label": "bg - sky",
+      "src": "assets/background/bg - sky.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-mod-1781536045315",
+      "layerId": "background",
+      "label": "bg - oleo Mod",
+      "src": "assets/background/bg - oleo Mod.png",
+      "tags": [],
+      "colorOverrides": []
+    },
+    {
+      "id": "bg---oleo-pot-1781536045316",
+      "layerId": "background",
+      "label": "bg - oleo POT",
+      "src": "assets/background/bg - oleo POT.png",
       "tags": [],
       "colorOverrides": []
     }
