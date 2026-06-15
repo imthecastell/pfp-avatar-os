@@ -695,7 +695,9 @@ async function _fetchFromGitHub(path) {
   });
   if (!res.ok) throw new Error(`GitHub ${res.status}`);
   const data = await res.json();
-  return JSON.parse(atob(data.content.replace(/\n/g, '')));
+  const raw = atob(data.content.replace(/\n/g, ''));
+  const text = decodeURIComponent(escape(raw));
+  return JSON.parse(text);
 }
 
 async function init() {
